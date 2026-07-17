@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "secgate": {
-      "url": "REPLACE_WITH_TUNNEL_URL",
+      "url": "https://sites-jersey-baking-temporary.trycloudflare.com",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"

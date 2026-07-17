@@ -7,7 +7,7 @@ Laptop A connects through the **Pomerium policy shim** (identity-aware gateway) 
 | Item | Status | Value |
 |------|--------|-------|
 | Gateway base URL (local) | **Ready** | `http://<Laptop-B-LAN-IP>:3200` or tunnel URL below |
-| Public tunnel URL | **Use one of the options below** | see **Public tunnel** |
+| Public tunnel URL | **LIVE** | `https://sites-jersey-baking-temporary.trycloudflare.com` |
 | MCP transport | Ready | HTTP JSON tool routes (streamable-HTTP when real Pomerium MCP lands) |
 | Dev identity | Ready | `dev@secgate.local` |
 | **Dev bearer token** | Ready | `dev-agent-token-PHASE2` |
@@ -26,6 +26,27 @@ Authorization: Bearer guardian-agent-token-PHASE2 # guardian only (do NOT put on
 | `dev-agent` | `plan_deployment`, `estimate_cost`, `list_deployments` | `apply_deployment`, `destroy_deployment` → **403** |
 | `guardian` | all tools | — |
 | quarantined `dev-agent` | nothing | even `plan_*` → **403** |
+
+## Live tunnels (Laptop B — updated Jul 17 2026)
+
+| Endpoint | URL | Who uses it |
+|----------|-----|-------------|
+| **Gateway (MCP)** `:3200` | `https://sites-jersey-baking-temporary.trycloudflare.com` | **Laptop A** — Cursor MCP |
+| Control Tower / budget `:3100` | `https://understanding-stripes-timer-pupils.trycloudflare.com` | Optional remote budget/dashboard |
+| Control Tower (local) | `http://localhost:3100/` | **Laptop B** operator |
+
+**Dev bearer token (Laptop A only):** `dev-agent-token-PHASE2`
+
+```bash
+# Header on every MCP/tool call from Laptop A
+Authorization: Bearer dev-agent-token-PHASE2
+```
+
+Do **not** put `guardian-agent-token-PHASE2` on Laptop A.
+
+Quick Cursor MCP paste: see [`docs/cursor-mcp.json`](./cursor-mcp.json) and [`docs/laptop-a-cheatsheet.md`](./laptop-a-cheatsheet.md).
+
+---
 
 ## Public tunnel (pick one)
 
