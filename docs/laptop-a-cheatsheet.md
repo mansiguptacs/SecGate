@@ -6,9 +6,9 @@ You are the **developer agent**. Laptop B runs SecGate (Control Tower + gateway 
 
 | Priority | When | MCP base URL |
 |----------|------|--------------|
-| **1. LAN (default)** | Same venue Wi‑Fi, no client isolation | `http://<Laptop-B-LAN-IP>:3200` |
+| **1. LAN (default)** | Same venue Wi‑Fi, no client isolation | `https://executive-rapid-alien-easy.trycloudflare.com` |
 | **2. Stable tunnel** | Guest Wi‑Fi blocks client↔client | URL in Laptop B’s `data/tunnel-url.txt` (localtunnel / named CF / ngrok / ssh -R) |
-| **3. Quick tunnel (LIVE now)** | Use if LAN fails | `https://via-joy-hint-written.trycloudflare.com` — kept alive by Laptop B `npm run tunnel:gateway` |
+| **3. Quick tunnel** | Last resort only | `*.trycloudflare.com` — **dies and changes hostname** on restart |
 
 Ask Laptop B for their LAN IP (or look at `docs/cursor-mcp.json`). Only ask for a tunnel if LAN curl/MCP fails.
 
@@ -27,31 +27,13 @@ You do **not** need `.env`, Akash, Nexla, or Zero on this machine.
 
 Settings → MCP → Add server (or merge into your Cursor MCP config).
 
-### LIVE quick tunnel (use this now)
+### Prefer LAN (same Wi‑Fi) — use this
 
 ```json
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://via-joy-hint-written.trycloudflare.com",
-      "transport": "streamable-http",
-      "headers": {
-        "Authorization": "Bearer dev-agent-token-PHASE2"
-      }
-    }
-  }
-}
-```
-
-Same file in-repo: [`docs/cursor-mcp.json`](./cursor-mcp.json).
-
-### Prefer LAN (same Wi‑Fi) when tunnel is down
-
-```json
-{
-  "mcpServers": {
-    "secgate": {
-      "url": "http://172.24.82.134:3200",
+      "url": "https://executive-rapid-alien-easy.trycloudflare.com",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
@@ -67,9 +49,9 @@ Same file in-repo: [`docs/cursor-mcp.json`](./cursor-mcp.json).
 
 ### Backup — stable tunnel (only if LAN blocked)
 
-Ask Laptop B to run `bash scripts/start-stable-gateway.sh` and paste the **BACKUP** URL from `data/tunnel-url.txt`. Then use that HTTPS URL in the same JSON shape.
+Ask Laptop B to run `npm run start:stable` and paste the **BACKUP** URL from `data/tunnel-url.txt`. Then use that HTTPS URL in the same JSON shape.
 
-**Current live quick tunnel:** `https://via-joy-hint-written.trycloudflare.com` — if it stops working, ask Laptop B for the new URL from `.secgate-logs/gateway-tunnel-url.txt`.
+Do **not** chase rotating `*.trycloudflare.com` quick-tunnel URLs unless both LAN and stable tunnel fail.
 
 ## 3. Demo tickets
 
@@ -98,7 +80,7 @@ Watch Laptop B’s **Control Tower**: http://localhost:3100/ (on their screen) f
 ## 6. Sync with Laptop B
 
 - **Default:** confirm LAN IP still matches this cheatsheet / `docs/cursor-mcp.json`
-- If tools fail on LAN: ask them to confirm `npm run start:phase2` (or `bash scripts/start-stable-gateway.sh`) and that gateway listens on `0.0.0.0:3200`
+- If tools fail on LAN: ask them to confirm `npm run start:phase2` (or `npm run start:stable`) and that gateway listens on `0.0.0.0:3200`
 - Tunnel backup only when venue Wi‑Fi has client isolation
 - Operator watches Control Tower while you paste tickets
 
@@ -106,9 +88,8 @@ Watch Laptop B’s **Control Tower**: http://localhost:3100/ (on their screen) f
 
 | Item | Value |
 |------|-------|
-| **Gateway (LAN — primary)** | `http://172.24.82.134:3200` |
+| **Gateway (LAN — primary)** | `https://executive-rapid-alien-easy.trycloudflare.com` |
 | Dev token | `Bearer dev-agent-token-PHASE2` |
-| **Gateway quick tunnel (LIVE)** | `https://via-joy-hint-written.trycloudflare.com` |
 | Stable tunnel backup | See Laptop B `data/tunnel-url.txt` (gitignored) |
 | Control Tower (Laptop B only) | `http://localhost:3100/` |
-| Operator start (Laptop B) | `npm run start:phase2` + `npm run tunnel:gateway` |
+| Operator start (Laptop B) | `npm run start:stable` |

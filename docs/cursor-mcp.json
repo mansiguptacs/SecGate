@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://via-joy-hint-written.trycloudflare.com",
+      "url": "https://executive-rapid-alien-easy.trycloudflare.com",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"

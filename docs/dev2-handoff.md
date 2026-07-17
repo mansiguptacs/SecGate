@@ -6,8 +6,8 @@ Laptop A connects through the **Pomerium policy shim** (identity-aware gateway) 
 
 | Item | Status | Value |
 |------|--------|-------|
-| Gateway base URL (**LAN — primary**) | **Ready** | `http://172.24.82.134:3200` (or current Laptop B LAN IP) |
-| Public tunnel URL | **LIVE (quick tunnel)** | `https://via-joy-hint-written.trycloudflare.com` — keep alive with `npm run tunnel:gateway` |
+| Gateway base URL (**LAN — primary**) | **Ready** | `https://executive-rapid-alien-easy.trycloudflare.com` (or current Laptop B LAN IP) |
+| Public tunnel URL | **Backup only** | See `data/tunnel-url.txt` after `npm run start:stable` |
 | MCP transport | Ready | HTTP JSON tool routes (streamable-HTTP when real Pomerium MCP lands) |
 | Dev identity | Ready | `dev@secgate.local` |
 | **Dev bearer token** | Ready | `dev-agent-token-PHASE2` |
@@ -31,12 +31,11 @@ Authorization: Bearer guardian-agent-token-PHASE2 # guardian only (do NOT put on
 
 | Endpoint | URL | Who uses it |
 |----------|-----|-------------|
-| **Gateway (MCP) LAN — primary** `:3200` | `http://172.24.82.134:3200` | **Laptop A** — Cursor MCP |
-| **Gateway quick tunnel (LIVE)** `:3200` | `https://via-joy-hint-written.trycloudflare.com` | **Laptop A** when LAN blocked — `npm run tunnel:gateway` |
-| Gateway stable backup | `data/tunnel-url.txt` (after `npm run start:stable`) | Named CF / ngrok / localtunnel |
+| **Gateway (MCP) LAN — primary** `:3200` | `https://executive-rapid-alien-easy.trycloudflare.com` | **Laptop A** — Cursor MCP |
+| Gateway stable tunnel backup | `data/tunnel-url.txt` (after `npm run start:stable`) | Only if Wi‑Fi client isolation blocks LAN |
 | Control Tower (local) | `http://localhost:3100/` | **Laptop B** operator |
 
-**Live quick tunnel (Jul 17 2026):** `https://via-joy-hint-written.trycloudflare.com` — auto-restart via `scripts/keep-gateway-tunnel.sh` / `npm run tunnel:gateway`. Hostname changes if the keeper restarts cloudflared; check `.secgate-logs/gateway-tunnel-url.txt`.
+**Do not** treat Cloudflare quick tunnels (`*.trycloudflare.com`) as the primary path — they die and rotate hostnames. Prefer LAN; use `npm run start:stable` for a fixed localtunnel/named backup.
 
 **Dev bearer token (Laptop A only):** `dev-agent-token-PHASE2`
 
@@ -122,7 +121,7 @@ If LAN is blocked, replace `url` with the HTTPS value from Laptop B’s `data/tu
 Example smoke (from Laptop A):
 
 ```bash
-export SECGATE=http://172.24.82.134:3200   # or backup from data/tunnel-url.txt
+export SECGATE=https://executive-rapid-alien-easy.trycloudflare.com   # or backup from data/tunnel-url.txt
 export TOK=dev-agent-token-PHASE2
 
 curl -s "$SECGATE/plan_deployment" \
