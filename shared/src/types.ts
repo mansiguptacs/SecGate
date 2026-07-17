@@ -1,0 +1,73 @@
+import type { GpuType } from "./pricing";
+
+export type EventKind =
+  | "plan"
+  | "estimate"
+  | "proposal"
+  | "guardian_approve"
+  | "guardian_reject"
+  | "apply"
+  | "apply_denied"
+  | "destroy"
+  | "list"
+  | "chat"
+  | "allow"
+  | "blocked";
+
+export interface SecGateEvent {
+  id: string;
+  ts: string;
+  kind: EventKind;
+  actor: string;
+  message: string;
+  detail?: Record<string, unknown>;
+}
+
+export type ProposalStatus = "pending" | "approved" | "rejected" | "applied" | "destroyed";
+
+export interface DeploymentSpec {
+  name: string;
+  image?: string;
+  gpu: GpuType;
+  gpuCount: number;
+  replicas?: number;
+  tags?: Record<string, string>;
+}
+
+export interface CostEstimate {
+  usdPerHour: number;
+  usdPerMonth: number;
+  breakdown: string;
+}
+
+export interface Proposal {
+  id: string;
+  planId: string;
+  spec: DeploymentSpec;
+  estimate: CostEstimate;
+  status: ProposalStatus;
+  createdAt: string;
+  decidedAt?: string;
+  decisionReason?: string;
+  actor: string;
+}
+
+export interface Deployment {
+  id: string;
+  proposalId: string;
+  name: string;
+  gpu: GpuType;
+  gpuCount: number;
+  usdPerMonth: number;
+  status: "running" | "destroyed";
+  akashLeaseId: string;
+  liveUrl: string;
+  createdAt: string;
+  destroyedAt?: string;
+  ownerTag?: string;
+}
+
+export interface BudgetConfig {
+  monthlyBudgetUsd: number;
+  team: string;
+}

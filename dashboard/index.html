@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SecGate Control Tower</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <header class="banner">
+    <div class="brand-block">
+      <div class="brand">SecGate</div>
+      <div class="tagline">Agents propose. SecGate disposes.</div>
+    </div>
+    <div class="spend-block">
+      <div class="spend-label">Committed spend / mo</div>
+      <div class="spend-value" id="spend">$0</div>
+      <div class="budget-track">
+        <div class="budget-fill" id="budgetFill"></div>
+      </div>
+      <div class="budget-meta">
+        <span>Budget <strong id="budgetLabel">$500</strong></span>
+        <span id="budgetPct">0%</span>
+      </div>
+    </div>
+    <div class="gate-block">
+      <div class="gate-label">Gate</div>
+      <div class="gate-light" id="gateLight" data-status="ok" title="Gate status"></div>
+      <div class="gate-text" id="gateText">OPEN</div>
+    </div>
+  </header>
+
+  <main class="tower">
+    <section class="pane chat-pane">
+      <h2>Agent activity</h2>
+      <div class="pane-body" id="chatFeed"></div>
+    </section>
+
+    <section class="pane feed-pane">
+      <h2>Tool calls</h2>
+      <div class="pane-body" id="toolFeed"></div>
+    </section>
+
+    <section class="pane deploy-pane">
+      <h2>Running deployments</h2>
+      <div class="pane-body" id="deployList"></div>
+      <div class="policy-stub">
+        <h3>Policy</h3>
+        <p class="muted">Phase 1: app-level guardian budget gate. Pomerium PPL arrives in Phase 2.</p>
+        <pre id="policySnippet">allow plan_*, estimate_*, list_*
+apply_*/destroy_* → guardian only
+budget_cap: $500/mo</pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="status-bar">
+    <span id="conn">connecting…</span>
+    <span>Phase 1 mock stack</span>
+  </footer>
+  <script src="/app.js"></script>
+</body>
+</html>

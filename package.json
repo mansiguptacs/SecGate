@@ -1,0 +1,23 @@
+{
+  "name": "secgate",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SecGate — Zero-Trust Guardrail for Infra Agents",
+  "workspaces": [
+    "shared",
+    "infra-mcp",
+    "guardian"
+  ],
+  "scripts": {
+    "build": "npm run build -w shared && npm run build -w infra-mcp && npm run build -w guardian",
+    "start:mcp": "npm run start -w infra-mcp",
+    "start:guardian": "npm run start -w guardian",
+    "start:dashboard": "npm run start -w infra-mcp -- --dashboard-only",
+    "start:phase1": "node scripts/start-phase1.js",
+    "test": "npm run test -w infra-mcp && npm run test -w guardian",
+    "test:phase1": "npm run test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
