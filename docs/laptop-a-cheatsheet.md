@@ -6,7 +6,7 @@ You are the **developer agent**. Laptop B runs SecGate (Control Tower + gateway 
 
 | Priority | When | MCP base URL |
 |----------|------|--------------|
-| **1. LIVE quick tunnel** | Use now | `https://executive-rapid-alien-easy.trycloudflare.com` |
+| **1. LAN (default)** | Same venue Wi‑Fi, no client isolation | `http://172.24.82.134:3200` |
 | **2. Stable tunnel** | Guest Wi‑Fi blocks client↔client | URL in Laptop B’s `data/tunnel-url.txt` (localtunnel / named CF / ngrok / ssh -R) |
 | **3. Quick tunnel** | Last resort only | `*.trycloudflare.com` — **dies and changes hostname** on restart |
 
@@ -33,7 +33,7 @@ Settings → MCP → Add server (or merge into your Cursor MCP config).
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://executive-rapid-alien-easy.trycloudflare.com",
+      "url": "http://172.24.82.134:3200",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
@@ -88,7 +88,7 @@ Watch Laptop B’s **Control Tower**: http://localhost:3100/ (on their screen) f
 
 | Item | Value |
 |------|-------|
-| **Gateway (LIVE tunnel)** | `https://executive-rapid-alien-easy.trycloudflare.com` |
+| **Gateway (LAN — primary)** | `http://172.24.82.134:3200` |
 | Dev token | `Bearer dev-agent-token-PHASE2` |
 | Stable tunnel backup | See Laptop B `data/tunnel-url.txt` (gitignored) |
 | Control Tower (Laptop B only) | `http://localhost:3100/` |

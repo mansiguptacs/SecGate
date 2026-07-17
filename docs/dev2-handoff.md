@@ -6,7 +6,7 @@ Laptop A connects through the **Pomerium policy shim** (identity-aware gateway) 
 
 | Item | Status | Value |
 |------|--------|-------|
-| Gateway base URL (**LIVE tunnel**) | **Ready** | `https://executive-rapid-alien-easy.trycloudflare.com` |
+| Gateway base URL (**LIVE tunnel**) | **Ready** | `http://172.24.82.134:3200` |
 | Public tunnel URL | **Backup only** | See `data/tunnel-url.txt` after `npm run start:stable` |
 | MCP transport | Ready | HTTP JSON tool routes (streamable-HTTP when real Pomerium MCP lands) |
 | Dev identity | Ready | `dev@secgate.local` |
@@ -31,7 +31,7 @@ Authorization: Bearer guardian-agent-token-PHASE2 # guardian only (do NOT put on
 
 | Endpoint | URL | Who uses it |
 |----------|-----|-------------|
-| **Gateway (MCP) LIVE tunnel** `:3200` | `https://executive-rapid-alien-easy.trycloudflare.com` | **Laptop A** — Cursor MCP |
+| **Gateway (MCP) LIVE tunnel** `:3200` | `http://172.24.82.134:3200` | **Laptop A** — Cursor MCP |
 | Gateway stable tunnel backup | `data/tunnel-url.txt` (after `npm run start:stable`) | Only if Wi‑Fi client isolation blocks LAN |
 | Control Tower (local) | `http://localhost:3100/` | **Laptop B** operator |
 
@@ -121,7 +121,7 @@ If LAN is blocked, replace `url` with the HTTPS value from Laptop B’s `data/tu
 Example smoke (from Laptop A):
 
 ```bash
-export SECGATE=https://executive-rapid-alien-easy.trycloudflare.com   # or backup from data/tunnel-url.txt
+export SECGATE=http://172.24.82.134:3200   # or backup from data/tunnel-url.txt
 export TOK=dev-agent-token-PHASE2
 
 curl -s "$SECGATE/plan_deployment" \

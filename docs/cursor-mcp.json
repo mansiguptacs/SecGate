@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://executive-rapid-alien-easy.trycloudflare.com",
+      "url": "http://172.24.82.134:3200",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
