@@ -211,26 +211,10 @@ start_ssh_r() {
   return 0
 }
 
-extract_lt_url() {
-  # localtunnel prints "your url is: https://….loca.lt"
-  local line="$1"
-  if [[ "$line" =~ https://[a-zA-Z0-9.-]+\.loca\.lt ]]; then
-    echo "$line" | grep -oE 'https://[a-zA-Z0-9.-]+\.loca\.lt' | head -1
-  fi
-}
-
 start_localtunnel() {
-  local sub wanted url=""
+  local wanted url="" lt_pid
   wanted="$(pick_subdomain)"
   echo "[stable-gateway] localtunnel subdomain=${wanted} → :${PORT}"
-
-  # Prefer global lt if present; else npx
-  local cmd=()
-  if command -v lt >/dev/null 2>&1; then
-    cmd=(lt --port "$PORT" --subdomain "$wanted")
-  else
-    cmd=(npx --yes localtunnel --port "$PORT" --subdomain "$wanted")
-  fi
 
   launch_lt() {
     local sub="$1"

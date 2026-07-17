@@ -37,9 +37,29 @@ const kids = [];
 
 const MCP_PORT = process.env.SECGATE_PORT || "3100";
 const GATEWAY_PORT = process.env.SECGATE_GATEWAY_PORT || "3200";
+const GATEWAY_HOST = process.env.SECGATE_GATEWAY_HOST || "0.0.0.0";
 const NEXLA_SHIM_PORT = process.env.NEXLA_SHIM_PORT || "3300";
 const MCP_URL = `http://127.0.0.1:${MCP_PORT}`;
 const GATEWAY_URL = `http://127.0.0.1:${GATEWAY_PORT}`;
+
+/** Best-effort LAN IPv4 addresses for Laptop A MCP URL. */
+function lanIPv4s() {
+  try {
+    const os = require("os");
+    const out = [];
+    const ifaces = os.networkInterfaces();
+    for (const name of Object.keys(ifaces)) {
+      for (const iface of ifaces[name] || []) {
+        if (iface.family !== "IPv4" && iface.family !== 4) continue;
+        if (iface.internal) continue;
+        out.push(iface.address);
+      }
+    }
+    return out;
+  } catch (_) {
+    return [];
+  }
+}
 
 const DEFAULT_SHIM_URL = `http://127.0.0.1:${NEXLA_SHIM_PORT}/mcp`;
 const DEFAULT_SHIM_KEY = "nxl_sk_secgate_demo_shim";
@@ -101,9 +121,26 @@ process.on("SIGTERM", shutdown);
 const BACKEND = (process.env.BACKEND || process.env.SECGATE_BACKEND || "mock").toLowerCase();
 const phaseLabel = BACKEND === "akash" ? "Phase 3 (Akash backend)" : "Phase 2";
 
+const lanIps = lanIPv4s();
+
 console.log("Starting SecGate " + phaseLabel + "…");
 console.log("  Control Tower → http://localhost:" + MCP_PORT + "/");
-console.log("  Pomerium shim → http://localhost:" + GATEWAY_PORT + "/  (Laptop A / agents)");
+console.log(
+  "  Pomerium shim → http://" +
+    GATEWAY_HOST +
+    ":" +
+    GATEWAY_PORT +
+    "/  (Laptop A / agents — LAN preferred)"
+);
+if (lanIps.length) {
+  for (const ip of lanIps) {
+    console.log("  Laptop A MCP  → http://" + ip + ":" + GATEWAY_PORT + "  (LAN — primary)");
+  }
+} else {
+  console.log(
+    "  Laptop A MCP  → http://<LAN_IP>:" + GATEWAY_PORT + "  (run: ipconfig getifaddr en0)"
+  );
+}
 console.log("  Backend:        " + BACKEND + (BACKEND === "akash" ? " (set AKASH_API_KEY for live leases)" : " — default; BACKEND=akash to swap)"));
 console.log("  Label: Pomerium policy shim — swap for real Pomerium when IdP ready");
 if (useShim && NEXLA_MCP_URL) {
@@ -120,6 +157,7 @@ if (useShim && NEXLA_MCP_URL) {
 console.log("");
 console.log("  Dev token:      Bearer dev-agent-token-PHASE2");
 console.log("  Guardian token: Bearer guardian-agent-token-PHASE2");
+console.log("  Stable stack:   bash scripts/start-stable-gateway.sh");
 console.log("");
 
 let delay = 0;
@@ -158,6 +196,7 @@ setTimeout(() => {
 setTimeout(() => {
   run("pomerium-shim", "npm", ["run", "start", "-w", "@secgate/pomerium"], {
     SECGATE_GATEWAY_PORT: GATEWAY_PORT,
+    SECGATE_GATEWAY_HOST: GATEWAY_HOST,
     SECGATE_MCP_URL: MCP_URL,
     SECGATE_POLICY_FILE: policyPath,
   });

@@ -13,6 +13,8 @@ import cors from "cors";
 import { PolicyEngine, policySnippet, normalizeToolName } from "./policy";
 
 const GATEWAY_PORT = Number(process.env.SECGATE_GATEWAY_PORT ?? 3200);
+/** Bind all interfaces so Laptop A can reach the gateway over LAN. */
+const GATEWAY_HOST = process.env.SECGATE_GATEWAY_HOST ?? "0.0.0.0";
 const UPSTREAM = process.env.SECGATE_MCP_URL ?? "http://127.0.0.1:3100";
 
 const TOOL_PATHS = new Set([
@@ -331,9 +333,11 @@ async function emitAudit(
 export function startShim(): void {
   const { app, engine } = createShim();
   engine.watch();
-  app.listen(GATEWAY_PORT, () => {
+  app.listen(GATEWAY_PORT, GATEWAY_HOST, () => {
     console.log(`[pomerium-shim] ${engine.current.label}`);
-    console.log(`[pomerium-shim] listening on http://localhost:${GATEWAY_PORT}`);
+    console.log(
+      `[pomerium-shim] listening on http://${GATEWAY_HOST}:${GATEWAY_PORT} (LAN clients: http://<this-host-ip>:${GATEWAY_PORT})`
+    );
     console.log(`[pomerium-shim] upstream MCP  ${UPSTREAM}`);
     console.log(`[pomerium-shim] policy file   ${engine.path}`);
     console.log(
