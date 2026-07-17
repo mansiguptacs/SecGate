@@ -1,0 +1,56 @@
+# SecGate Pomerium-shaped PPL
+# ---------------------------------------------------------------------------
+# This file is loaded by the identity-aware policy shim (pomerium/shim).
+# Labeled: "Pomerium policy shim — swap for real Pomerium when IdP ready"
+#
+# When a real Pomerium IdP + MCP runtime_flags.mcp is wired, map these rules
+# onto Pomerium Route Policy Language and keep this file as the source of truth
+# for the demo story / quarantine diffs.
+# ---------------------------------------------------------------------------
+
+version: secgate-ppl/v1
+label: "Pomerium policy shim — swap for real Pomerium when IdP ready"
+
+identities:
+  - id: dev-agent
+    email: dev@secgate.local
+    token: dev-agent-token-PHASE2
+    role: developer
+  - id: guardian
+    email: guardian@secgate.local
+    token: guardian-agent-token-PHASE2
+    role: guardian
+
+# Tools every authenticated (non-quarantined) identity may call
+allow_tools:
+  - plan_deployment
+  - estimate_cost
+  - list_deployments
+
+# Tools restricted to guardian role only
+guardian_only_tools:
+  - apply_deployment
+  - destroy_deployment
+
+# Abuse → quarantine: after N blocked apply/destroy attempts, deny ALL tools
+abuse:
+  blocked_mutate_threshold: 3
+
+# Live quarantine list (guardian appends identity ids / emails here)
+quarantine:
+  identities: []
+  # Example after quarantine:
+  # identities:
+  #   - id: dev-agent
+  #     email: dev@secgate.local
+  #     reason: "Repeated blocked apply_deployment attempts"
+  #     since: "2026-07-17T20:00:00.000Z"
+
+# Deny rules appended for dashboard PPL-diff animation (mirrors quarantine)
+deny_rules: []
+# Example:
+# - deny:
+#     and:
+#       - email:
+#           is: dev@secgate.local
+#     reason: "Quarantined after repeated policy violations"

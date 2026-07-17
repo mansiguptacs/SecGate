@@ -50,7 +50,7 @@
       <div class="pane-body" id="deployList"></div>
       <div class="policy-stub">
         <h3>Policy</h3>
-        <p class="muted">Phase 1: app-level guardian budget gate. Pomerium PPL arrives in Phase 2.</p>
+        <p class="muted" id="policyNote">Pomerium PPL (policy shim — swap for real Pomerium when IdP ready)</p>
         <pre id="policySnippet">allow plan_*, estimate_*, list_*
 apply_*/destroy_* → guardian only
 budget_cap: $500/mo</pre>
@@ -60,7 +60,7 @@ budget_cap: $500/mo</pre>
 
   <footer class="status-bar">
     <span id="conn">connecting…</span>
-    <span>Phase 1 mock stack</span>
+    <span id="phaseLabel">Phase 1 mock stack</span>
   </footer>
   <script src="/app.js"></script>
 </body>

@@ -1,0 +1,20 @@
+# Optional: real Pomerium Docker (MCP runtime). Phase 2 demo uses the Node
+# policy shim by default — swap when IdP OAuth is ready.
+#
+#   docker compose -f pomerium/docker-compose.yml up
+#
+# Requires authenticating IdP + certificates. Until then:
+#   npm run start:phase2
+
+services:
+  pomerium:
+    image: pomerium/pomerium:main
+    ports:
+      - "8443:443"
+    volumes:
+      - ./config.yaml:/pomerium/config.yaml:ro
+      - ./policy.yaml:/pomerium/policy.yaml:ro
+    environment:
+      - POMERIUM_CONFIG_FILE=/pomerium/config.yaml
+    profiles:
+      - real-pomerium

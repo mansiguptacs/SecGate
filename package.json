@@ -6,16 +6,20 @@
   "workspaces": [
     "shared",
     "infra-mcp",
-    "guardian"
+    "guardian",
+    "pomerium"
   ],
   "scripts": {
-    "build": "npm run build -w shared && npm run build -w infra-mcp && npm run build -w guardian",
+    "build": "npm run build -w shared && npm run build -w infra-mcp && npm run build -w guardian && npm run build -w @secgate/pomerium",
     "start:mcp": "npm run start -w infra-mcp",
     "start:guardian": "npm run start -w guardian",
+    "start:gateway": "npm run start -w @secgate/pomerium",
     "start:dashboard": "npm run start -w infra-mcp -- --dashboard-only",
     "start:phase1": "node scripts/start-phase1.js",
-    "test": "npm run test -w infra-mcp && npm run test -w guardian",
-    "test:phase1": "npm run test"
+    "start:phase2": "node scripts/start-phase2.js",
+    "test": "npm run test -w infra-mcp && npm run test -w guardian && npm run test -w @secgate/pomerium",
+    "test:phase1": "npm run test -w infra-mcp && npm run test -w guardian",
+    "test:phase2": "npm run test -w @secgate/pomerium"
   },
   "engines": {
     "node": ">=18"

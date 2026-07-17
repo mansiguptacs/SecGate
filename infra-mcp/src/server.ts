@@ -32,10 +32,48 @@ export function createApp(opts?: {
   app.get("/health", (_req, res) => {
     res.json({
       ok: true,
-      phase: 1,
+      phase: Number(process.env.SECGATE_PHASE ?? 1),
       transport: "http-json-shim",
       tools: TOOL_NAMES,
       budgetUsd: BUDGET,
+    });
+  });
+
+  /** Gateway / guardian audit sink (ALLOW / BLOCKED 403 from Pomerium policy shim). */
+  app.post("/events/audit", (req, res) => {
+    const kind = String(req.body?.kind ?? "blocked");
+    const actor = String(req.body?.actor ?? "pomerium");
+    const message = String(req.body?.message ?? "");
+    const detail =
+      req.body?.detail && typeof req.body.detail === "object"
+        ? (req.body.detail as Record<string, unknown>)
+        : undefined;
+    if (!message) {
+      res.status(400).json({ ok: false, error: "message required" });
+      return;
+    }
+    const event = events.append(kind as any, actor, message, detail);
+    res.json({ ok: true, event });
+  });
+
+  app.get("/policy", async (_req, res) => {
+    // Optional: surface live PPL from shim if SECGATE_GATEWAY_URL is set
+    const gateway = process.env.SECGATE_GATEWAY_URL;
+    if (gateway) {
+      try {
+        const r = await fetch(`${gateway}/policy`);
+        if (r.ok) {
+          res.json(await r.json());
+          return;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+    res.json({
+      label: "Phase 1 app-level policy (no Pomerium yet)",
+      snippet:
+        "allow plan_*, estimate_*, list_*\napply_*/destroy_* → guardian only\nbudget_cap: $500/mo",
     });
   });
 
@@ -89,13 +127,25 @@ export function createApp(opts?: {
     }
   });
 
-  app.get("/events", (req, res) => {
+  app.get("/events", async (req, res) => {
     const since = typeof req.query.since === "string" ? req.query.since : undefined;
+    let policy: unknown = null;
+    const gateway = process.env.SECGATE_GATEWAY_URL;
+    if (gateway) {
+      try {
+        const r = await fetch(`${gateway}/policy`);
+        if (r.ok) policy = await r.json();
+      } catch {
+        /* ignore */
+      }
+    }
     res.json({
       events: events.list(since),
       committedSpendUsd: backend.committedSpendUsd(),
       budgetUsd: BUDGET,
       deployments: backend.listDeployments().filter((d) => d.status === "running"),
+      policy,
+      phase: Number(process.env.SECGATE_PHASE ?? 1),
     });
   });
 

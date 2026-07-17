@@ -9,11 +9,15 @@
   const toolFeed = document.getElementById("toolFeed");
   const deployList = document.getElementById("deployList");
   const conn = document.getElementById("conn");
+  const policySnippet = document.getElementById("policySnippet");
+  const phaseLabel = document.getElementById("phaseLabel");
+  const policyNote = document.getElementById("policyNote");
 
   let seen = new Set();
   let displaySpend = 0;
   let targetSpend = 0;
   let animFrame = null;
+  let quarantined = false;
 
   function fmt(n) {
     return "$" + Math.round(n).toLocaleString("en-US");
@@ -42,9 +46,26 @@
     budgetFill.classList.toggle("over", over);
     budgetPct.textContent = Math.round(pct) + "%";
     budgetLabel.textContent = fmt(budget);
-    gateLight.dataset.status = over ? "alert" : "ok";
-    gateText.textContent = over ? "OVER BUDGET" : "OPEN";
+    if (quarantined) {
+      gateLight.dataset.status = "alert";
+      gateText.textContent = "QUARANTINED";
+    } else {
+      gateLight.dataset.status = over ? "alert" : "ok";
+      gateText.textContent = over ? "OVER BUDGET" : "OPEN";
+    }
     if (!animFrame) animFrame = requestAnimationFrame(animateSpend);
+  }
+
+  function renderPolicy(policy) {
+    if (!policySnippet) return;
+    if (!policy) return;
+    const snippet = policy.snippet || "";
+    if (snippet) policySnippet.textContent = snippet;
+    const q = policy.policy?.quarantine?.identities || [];
+    quarantined = q.length > 0;
+    if (policyNote) {
+      policyNote.textContent = policy.label || "Pomerium policy";
+    }
   }
 
   function actorClass(actor) {
@@ -136,6 +157,11 @@
       const data = await res.json();
       setSpend(data.committedSpendUsd || 0, data.budgetUsd || 500);
       renderDeployments(data.deployments || []);
+      renderPolicy(data.policy);
+      if (phaseLabel) {
+        phaseLabel.textContent =
+          "Phase " + (data.phase || 1) + (data.policy ? " · Pomerium policy" : " mock stack");
+      }
       const events = data.events || [];
       for (const ev of events) {
         if (ev.kind === "chat") addChat(ev);
