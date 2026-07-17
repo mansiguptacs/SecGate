@@ -1,0 +1,17 @@
+[
+  {
+    "team": "platform-eng",
+    "monthly_budget_usd": 500,
+    "spent_usd": 47
+  },
+  {
+    "team": "data-platform",
+    "monthly_budget_usd": 1200,
+    "spent_usd": 310
+  },
+  {
+    "team": "ml-research",
+    "monthly_budget_usd": 2000,
+    "spent_usd": 875
+  }
+]
