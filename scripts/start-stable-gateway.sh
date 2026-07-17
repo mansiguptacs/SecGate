@@ -278,7 +278,36 @@ start_localtunnel() {
 
   if [ -n "$url" ]; then
     echo "$url" >"$URL_FILE"
+    # Persist whatever subdomain lt actually assigned (may differ if preferred was taken)
+    actual_sub="$(echo "$url" | sed -E 's|https://([^.]+)\.loca\.lt|\1|')"
+    if [ -n "$actual_sub" ]; then
+      echo "$actual_sub" >"$SUB_FILE"
+      wanted="$actual_sub"
+    else
+      echo "$wanted" >"$SUB_FILE"
+    fi
     echo "[stable-gateway] BACKUP_URL=${url}  (saved ${URL_FILE})"
+    # Supervisor: restart localtunnel with the saved subdomain if it dies
+    nohup bash -c "
+      while true; do
+        if ! pgrep -f \"localtunnel.*${PORT}|lt --port ${PORT}\" >/dev/null 2>&1; then
+          echo \"[\$(date -u +%Y-%m-%dT%H:%M:%SZ)] localtunnel down; restarting subdomain=${wanted}\" >>\"${LOG}\"
+          if command -v lt >/dev/null 2>&1; then
+            nohup lt --port ${PORT} --subdomain ${wanted} >>\"${LOG}\" 2>&1 &
+          else
+            nohup npx --yes localtunnel --port ${PORT} --subdomain ${wanted} >>\"${LOG}\" 2>&1 &
+          fi
+          echo \$! >\"${PID_FILE}\"
+          sleep 5
+          nu=\$(grep -oE 'https://[a-zA-Z0-9.-]+\\.loca\\.lt' \"${LOG}\" | tail -1)
+          [ -n \"\$nu\" ] && echo \"\$nu\" >\"${URL_FILE}\"
+        fi
+        sleep 8
+      done
+    " >/dev/null 2>&1 &
+    echo $! >"$LOG_DIR/stable-tunnel-keeper.pid"
+    disown 2>/dev/null || true
+    echo "[stable-gateway] localtunnel keeper pid=$(cat "$LOG_DIR/stable-tunnel-keeper.pid")"
     return 0
   fi
 
