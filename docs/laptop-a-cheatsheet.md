@@ -33,7 +33,7 @@ Settings → MCP → Add server (or merge into your Cursor MCP config).
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://vary-five-patient-saving.trycloudflare.com",
+      "url": "https://know-locator-hay-inn.trycloudflare.com",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
@@ -88,7 +88,7 @@ Watch Laptop B’s **Control Tower**: http://localhost:3100/ (on their screen) f
 
 | Item | Value |
 |------|-------|
-| **Gateway (LIVE tunnel)** | `https://vary-five-patient-saving.trycloudflare.com` |
+| **Gateway (LIVE tunnel)** | `https://know-locator-hay-inn.trycloudflare.com` |
 | Gateway LAN fallback | `http://172.24.82.134:3200` |
 | Dev token | `Bearer dev-agent-token-PHASE2` |
 | Stable tunnel backup | See Laptop B `data/tunnel-url.txt` (gitignored) |
