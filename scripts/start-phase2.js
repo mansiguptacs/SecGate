@@ -142,7 +142,7 @@ if (lanIps.length) {
   );
 }
 console.log("  Backend:        " + BACKEND + (BACKEND === "akash" ? " (set AKASH_API_KEY for live leases)" : " — default; BACKEND=akash to swap)"));
-console.log("  Label: Pomerium policy shim — swap for real Pomerium when IdP ready");
+console.log("  Label: Identity-aware policy gate (Pomerium)");
 if (useShim && NEXLA_MCP_URL) {
   console.log(
     "  Nexla:          local MCP shim :" +

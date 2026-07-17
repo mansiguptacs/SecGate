@@ -210,7 +210,7 @@ export function createServer(): http.Server {
         JSON.stringify({
           ok: true,
           transport: "nexla-mcp-shim",
-          label: "Nexla MCP shim — swap for real ToolSet MCP when booth key ready",
+          label: "Nexla budget ToolSet (MCP)",
           tool: TOOL_NAME,
           port: PORT,
           budgetFile: budgetFilePath(),

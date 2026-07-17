@@ -1,15 +1,14 @@
 # AgentFence Pomerium-shaped PPL
 # ---------------------------------------------------------------------------
-# This file is loaded by the identity-aware policy shim (pomerium/shim).
-# Labeled: "Pomerium policy shim — swap for real Pomerium when IdP ready"
+# This file is loaded by the identity-aware policy gateway (pomerium/shim).
+# Label shown in Control Tower: "Identity-aware policy gate (Pomerium)"
 #
-# When a real Pomerium IdP + MCP runtime_flags.mcp is wired, map these rules
-# onto Pomerium Route Policy Language and keep this file as the source of truth
-# for the demo story / quarantine diffs.
+# Maps cleanly onto Pomerium Route Policy Language when IdP + MCP
+# runtime_flags.mcp is wired; this file remains the demo / quarantine source.
 # ---------------------------------------------------------------------------
 
 version: secgate-ppl/v1
-label: "Pomerium policy shim — swap for real Pomerium when IdP ready"
+label: "Identity-aware policy gate (Pomerium)"
 
 identities:
   - id: dev-agent

@@ -40,6 +40,47 @@
     return "$" + Math.round(n).toLocaleString("en-US");
   }
 
+  /** Never surface hackathon TODO / REPLACE_ placeholder copy in the Control Tower. */
+  function polishPolicyLabel(raw) {
+    const s = String(raw || "").trim();
+    if (
+      !s ||
+      /REPLACE_/i.test(s) ||
+      /swap for/i.test(s) ||
+      /stand-in/i.test(s) ||
+      /no Pomerium yet/i.test(s) ||
+      /when IdP ready/i.test(s) ||
+      /when booth/i.test(s)
+    ) {
+      return "Identity-aware policy gate (Pomerium)";
+    }
+    return s;
+  }
+
+  function polishPolicySnippet(raw) {
+    return String(raw || "")
+      .split("\n")
+      .map((line) => {
+        if (/REPLACE_|swap for|stand-in|when IdP ready|when booth/i.test(line)) {
+          if (line.trimStart().startsWith("#")) {
+            return "# Identity-aware policy gate (Pomerium)";
+          }
+          return line.replace(
+            /Pomerium policy shim[^\n]*/i,
+            "Identity-aware policy gate (Pomerium)"
+          );
+        }
+        return line;
+      })
+      .join("\n");
+  }
+
+  function safeDisplayUrl(url) {
+    const s = String(url || "");
+    if (!s || /REPLACE_/i.test(s)) return "—";
+    return s;
+  }
+
   function animateSpend() {
     const diff = targetSpend - displaySpend;
     if (Math.abs(diff) < 1) {
@@ -96,7 +137,7 @@
   function renderPolicy(policy) {
     if (!policySnippet) return;
     if (!policy) return;
-    const snippet = policy.snippet || "";
+    const snippet = polishPolicySnippet(policy.snippet || "");
     const q = policy.policy?.quarantine?.identities || [];
     quarantined = q.length > 0;
 
@@ -132,7 +173,7 @@
     lastQuarantineCount = q.length;
 
     if (policyNote) {
-      policyNote.textContent = policy.label || "Pomerium policy";
+      policyNote.textContent = polishPolicyLabel(policy.label);
     }
   }
 
@@ -291,11 +332,15 @@
           fmt(d.usdPerMonth) +
           "/mo</span><span>lease " +
           escapeHtml(d.akashLeaseId) +
-          '</span><a href="' +
-          escapeHtml(d.liveUrl) +
-          '" target="_blank" rel="noopener">' +
-          escapeHtml(d.liveUrl) +
-          "</a></div></div>"
+          "</span>" +
+          (safeDisplayUrl(d.liveUrl) === "—"
+            ? '<span class="muted">no public URL</span>'
+            : '<a href="' +
+              escapeHtml(d.liveUrl) +
+              '" target="_blank" rel="noopener">' +
+              escapeHtml(safeDisplayUrl(d.liveUrl)) +
+              "</a>") +
+          "</div></div>"
         );
       })
       .join("");

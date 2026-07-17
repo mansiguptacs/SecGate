@@ -73,8 +73,7 @@ export function loadPolicy(filePath: string): SecGatePolicy {
   doc.quarantine = doc.quarantine ?? { identities: [] };
   doc.deny_rules = doc.deny_rules ?? [];
   doc.label =
-    doc.label ??
-    "Pomerium policy shim — swap for real Pomerium when IdP ready";
+    doc.label ?? "Identity-aware policy gate (Pomerium)";
   return doc;
 }
 
@@ -264,7 +263,7 @@ export class PolicyEngine {
     const banner = [
       "# AgentFence Pomerium-shaped PPL (auto-written by guardian quarantine)",
       `# ${this.policy.label}`,
-      "# Hot-reloaded by the policy shim — swap for real Pomerium when IdP ready.",
+      "# Hot-reloaded by the identity-aware policy gate.",
       "",
     ].join("\n");
     fs.writeFileSync(this.filePath, banner + dump, "utf8");

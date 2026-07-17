@@ -15,7 +15,7 @@ const eventsFile = path.join(tmpDir, "events.json");
 const policyFile = path.join(tmpDir, "policy.yaml");
 
 const SEED_POLICY = `version: secgate-ppl/v1
-label: "Pomerium policy shim — swap for real Pomerium when IdP ready"
+label: "Identity-aware policy gate (Pomerium)"
 identities:
   - id: dev-agent
     email: dev@secgate.local
