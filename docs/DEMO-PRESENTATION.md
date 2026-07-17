@@ -132,22 +132,22 @@ npm run demo
 
 ---
 
-## 6. Optional VO (collapsed — not the playbook)
+## 6. Spoken narration (what B says)
+
+**Full script:** [demo/narration_script.md](../demo/narration_script.md) — first-person lines, timestamps, CUT IF BEHIND, elevator.
 
 <details>
-<summary>Spoken lines if B wants light narration (secondary)</summary>
+<summary>One-liners only (pocket card)</summary>
 
-**Scene 0:** “Hidden line in a ticket. Agent spins eight A100s — twelve thousand a month. Who’s watching your agents?”
+**Scene 0:** “Gate off — eight A100s. Twelve K a month. Who’s watching?”
 
-**Scene 1:** “SecGate on. Clean ticket — agent can only propose. Zero prices it, Nexla checks budget: three dollars. Guardian applies on Akash. Live. Zero friction.”
+**Scene 1:** “Clean ticket. Propose only. Zero + Nexla ≈ $3. Guardian on Akash. Live.”
 
-**Scene 2:** “Poisoned ticket — eight A100s. Guardian rejects. Direct apply — 403. Third try — identity quarantined. No human touched it.”
+**Scene 2:** “Poisoned — Guardian rejects. Direct apply — Pomerium 403. Quarantined. No human.”
 
-**Scene 3:** “Orphan sweep — idle, no owner. Destroyed. Spend drops.”
+**Scene 3:** “Orphan sweep — spend drops.”
 
-**Scene 4:** “Pomerium — identity and per-tool policy. Akash — governed compute. Zero — live pricing. Nexla — budget as data. Agents propose. SecGate disposes.”
-
-**Hallway elevator (off-clock):** “Agents hold cloud credentials. One hidden ticket line can spin eight GPUs overnight. SecGate is the zero-trust gate: agents only propose; policy blocks unauthorized apply; guardian cost-checks with Zero and Nexla, deploys on Akash when safe, quarantines abuse, cleans orphans.”
+**Scene 4:** “Pomerium · Akash · Zero · Nexla · Guardian. Agents propose. SecGate disposes.”
 
 </details>
 
