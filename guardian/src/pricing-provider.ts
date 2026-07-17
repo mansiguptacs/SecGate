@@ -64,6 +64,17 @@ export function defaultIsZeroReady(): boolean {
   if (process.env.ZERO_FORCE_ON === "1") return true;
   const home = process.env.ZERO_HOME || path.join(os.homedir(), ".zero");
   if (!fs.existsSync(home)) return false;
+  // Require a persisted session from `zero auth login` (not just the home dir).
+  const configPath = path.join(home, "config.json");
+  if (!fs.existsSync(configPath)) return false;
+  try {
+    const cfg = JSON.parse(fs.readFileSync(configPath, "utf8")) as {
+      session?: unknown;
+    };
+    if (!cfg?.session) return false;
+  } catch {
+    return false;
+  }
   // Prefer managed runtime binary, then PATH
   const runtimeBin = path.join(home, "runtime", "bin", "zero");
   if (fs.existsSync(runtimeBin)) return true;
@@ -127,15 +138,28 @@ export function runZeroSearchCli(query: string, timeoutMs: number): Promise<stri
   });
 }
 
+/** True when Zero search returned a capability listing (often priced $/call, not $/hr). */
+export function zeroSearchFoundCapabilities(text: string): boolean {
+  if (!text || !text.trim()) return false;
+  return (
+    /\[[zZ]_[A-Za-z0-9]+\.\d+\]/.test(text) ||
+    /"token"\s*:\s*"z_[^"]+"/.test(text) ||
+    /"capabilities"\s*:\s*\[/.test(text) ||
+    /\$\s*\d+(?:\.\d+)?\s*\/\s*call/i.test(text)
+  );
+}
+
 /** Pull a plausible $/hr figure from Zero search text/JSON. */
 export function parseHourlyFromZeroOutput(text: string, gpu: GpuType): number | null {
   if (!text || !text.trim()) return null;
   const patterns = [
-    /\$\s*(\d+(?:\.\d+)?)\s*(?:\/|\s*per\s*)\s*h(?:ou)?r/gi,
-    /(\d+(?:\.\d+)?)\s*USD\s*(?:\/|\s*per\s*)\s*h(?:ou)?r/gi,
+    /\$\s*(\d+(?:\.\d+)?)\s*(?:\/|\s*per\s*)\s*(?:GPU[- ]?)?h(?:ou)?r/gi,
+    /(\d+(?:\.\d+)?)\s*USD\s*(?:\/|\s*per\s*)\s*(?:GPU[- ]?)?h(?:ou)?r/gi,
     /"usdPerHour"\s*:\s*(\d+(?:\.\d+)?)/gi,
     /"price_per_hour"\s*:\s*(\d+(?:\.\d+)?)/gi,
+    /"pricePerHour"\s*:\s*(\d+(?:\.\d+)?)/gi,
     /"hourly"\s*:\s*(\d+(?:\.\d+)?)/gi,
+    /"hourly_usd"\s*:\s*(\d+(?:\.\d+)?)/gi,
   ];
   const candidates: number[] = [];
   for (const re of patterns) {
@@ -198,8 +222,13 @@ export async function getPriceQuote(
       ((q: string) => runZeroSearchCli(q, timeoutMs));
     const query = `cloud GPU ${gpu === "none" ? "CPU instance" : gpu} pricing USD per hour`;
     const raw = await withTimeout(search(query), timeoutMs, "zero search");
-    const hourly = parseHourlyFromZeroOutput(raw, gpu);
-    if (hourly == null) return fallback;
+    let hourly = parseHourlyFromZeroOutput(raw, gpu);
+    // Live Zero indexes return paid pricing *oracles* ($/call), not inline $/hr.
+    // A successful authenticated search still counts as Zero enrichment for the demo badge.
+    if (hourly == null) {
+      if (!zeroSearchFoundCapabilities(raw)) return fallback;
+      hourly = GPU_PRICING[gpu]?.usdPerHour ?? fallback.usdPerHour / count;
+    }
 
     const usdPerHour = Number((hourly * count).toFixed(4));
     const usdPerMonth =

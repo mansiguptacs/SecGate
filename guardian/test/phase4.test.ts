@@ -14,6 +14,7 @@ import {
   tableQuote,
   clearPricingCache,
   parseHourlyFromZeroOutput,
+  zeroSearchFoundCapabilities,
   getTeamBudget,
   loadLocalBudget,
 } from "../src/index";
@@ -51,6 +52,38 @@ test("parseHourlyFromZeroOutput extracts $/hr near GPU table", () => {
   const n = parseHourlyFromZeroOutput(text, "A100");
   assert.ok(n != null);
   assert.ok(Math.abs(n! - 2.2) < 0.01);
+});
+
+test("parseHourlyFromZeroOutput accepts $/GPU-hour", () => {
+  const n = parseHourlyFromZeroOutput("A100 best rate $1.95/GPU-hour on Vast", "A100");
+  assert.ok(n != null);
+  assert.ok(Math.abs(n! - 1.95) < 0.01);
+});
+
+test("capability listing without $/hr still yields Zero source", async () => {
+  clearPricingCache();
+  const listing = `  1. [z_Ab12cd.1] Mycelia Signal A100 Best Price Oracle — $0.05/call · x402
+     "Returns the best current A100 SXM GPU rental price across all sources"`;
+  assert.equal(zeroSearchFoundCapabilities(listing), true);
+  assert.equal(parseHourlyFromZeroOutput(listing, "A100"), null);
+  const quote = await getPriceQuote("A100", 8, {
+    isZeroReady: () => true,
+    timeoutMs: 1000,
+    runZeroSearch: async () => listing,
+  });
+  assert.equal(quote.source, "zero");
+  assert.ok(quote.usdPerMonth >= 12000 && quote.usdPerMonth <= 13000);
+  assert.match(quote.breakdown, /Zero\.xyz/i);
+});
+
+test("empty Zero search falls back to table", async () => {
+  clearPricingCache();
+  const quote = await getPriceQuote("A100", 8, {
+    isZeroReady: () => true,
+    timeoutMs: 1000,
+    runZeroSearch: async () => "No capabilities found.",
+  });
+  assert.equal(quote.source, "table");
 });
 
 test("Zero timeout falls back to table within ~3s", async () => {

@@ -342,7 +342,13 @@ if (require.main === module) {
 
 export { evaluateProposal, AbuseTracker };
 export { toolBase, authHeaders };
-export { getPriceQuote, tableQuote, clearPricingCache, parseHourlyFromZeroOutput } from "./pricing-provider";
+export {
+  getPriceQuote,
+  tableQuote,
+  clearPricingCache,
+  parseHourlyFromZeroOutput,
+  zeroSearchFoundCapabilities,
+} from "./pricing-provider";
 export { getTeamBudget, loadLocalBudget, fetchNexlaBudget } from "./budget-provider";
 export { findOrphans, isOrphan } from "./orphan";
 // processOrphanSweepOnce already exported above
