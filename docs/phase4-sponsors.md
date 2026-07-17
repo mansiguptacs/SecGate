@@ -35,7 +35,7 @@ Control Tower chat bubbles show a **Zero** vs **table** badge on guardian verdic
 
 ## Enable Nexla
 
-Dev 2 hands over a ToolSet MCP URL + service key. Expected tool (override with env): **`get_team_budget`** returning JSON like:
+Expected tool (override with env): **`get_team_budget`** returning JSON like:
 
 ```json
 {
@@ -45,7 +45,35 @@ Dev 2 hands over a ToolSet MCP URL + service key. Expected tool (override with e
 }
 ```
 
+### Demo default — local MCP shim (Control Tower **Nexla** badge)
+
+Real Nexla ToolSet credentials usually come from the sponsor booth / MCP Studio early access. Until then, SecGate ships a **Nexla-compatible local MCP shim** (`nexla/`):
+
 ```bash
+# Wired automatically by npm run start:phase2 when URL is localhost / unset
+export NEXLA_USE_SHIM=1
+export NEXLA_MCP_URL="http://127.0.0.1:3300/mcp"
+export NEXLA_SERVICE_KEY="nxl_sk_secgate_demo_shim"
+export NEXLA_BUDGET_TOOL="get_team_budget"
+```
+
+Shim reads the same `data/budget.json` fields but answers via JSON-RPC `tools/call`, so guardian sets `budgetSource: "nexla"` and Control Tower shows the **Nexla** badge. Clearly labeled: *demo stand-in — swap for real ToolSet MCP when booth key ready*.
+
+```bash
+npm run start:nexla          # shim alone on :3300
+npm run test:nexla
+```
+
+### Real Nexla (booth / MCP Studio)
+
+1. Get org access (booth, [early access](https://nexla.com/early-access/), or [dataops.nexla.io](https://dataops.nexla.io) trial).
+2. Settings → Authentication → **Create Service Key** (`nxl_sk_…`).
+3. Deploy a ToolSet as MCP server with tool **`get_team_budget`** (fields above).
+4. Copy the export URL: `https://api-genai.nexla.io/mcp/service_key/<server_key>`.
+5. Paste into `.env` (gitignored) and disable the shim:
+
+```bash
+export NEXLA_USE_SHIM=0
 export NEXLA_MCP_URL="https://api-genai.nexla.io/mcp/service_key/<server_key>"
 export NEXLA_SERVICE_KEY="nxl_sk_...."   # or NEXLA_API_KEY
 # optional:
@@ -54,7 +82,7 @@ export NEXLA_TIMEOUT_MS=3000
 export NEXLA_TEAM="platform-eng"
 ```
 
-Guardian POSTs MCP JSON-RPC `tools/call`. Missing URL/key, HTTP error, or timeout → **`data/budget.json`**.
+Guardian POSTs MCP JSON-RPC `tools/call` with `Accept: application/json`. Missing URL/key, HTTP error, or timeout → **`data/budget.json`** (`local` badge).
 
 Chat bubbles show **Nexla** vs **local** on the budget badge.
 

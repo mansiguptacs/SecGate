@@ -1,0 +1,17 @@
+{
+  "name": "@secgate/nexla",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/shim.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/shim.js",
+    "dev": "tsx src/shim.ts",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

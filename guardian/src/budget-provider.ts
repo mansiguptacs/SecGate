@@ -160,6 +160,7 @@ export async function fetchNexlaBudget(
       method: "POST",
       headers: {
         "content-type": "application/json",
+        accept: "application/json",
         authorization: `Bearer ${cfg.key}`,
       },
       body: JSON.stringify(body),

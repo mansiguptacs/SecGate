@@ -42,8 +42,10 @@ Guardian enriches decisions with **Zero.xyz** pricing and **Nexla** budget/spend
 
 ```bash
 npm run test:phase4
+npm run test:nexla
 # Zero:   zero init && zero auth login   (on Laptop B)
-# Nexla:  export NEXLA_MCP_URL=... NEXLA_SERVICE_KEY=...
+# Nexla:  local MCP shim on :3300 by default (Nexla badge);
+#         at booth: NEXLA_USE_SHIM=0 + real NEXLA_MCP_URL + NEXLA_SERVICE_KEY
 ```
 
 Details: [docs/phase4-sponsors.md](./docs/phase4-sponsors.md).

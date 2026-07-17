@@ -140,12 +140,18 @@ Full guide: **[docs/phase4-sponsors.md](./phase4-sponsors.md)**.
 | Sponsor | Required on Laptop B | Fallback if missing |
 |---------|----------------------|---------------------|
 | **Zero.xyz** | `npm i -g @zeroxyz/cli && zero init && zero auth login` → `~/.zero` | Static GPU price table |
-| **Nexla** | `NEXLA_MCP_URL` + `NEXLA_SERVICE_KEY` (tool `get_team_budget`) | `data/budget.json` ($500) |
+| **Nexla** | `NEXLA_MCP_URL` + `NEXLA_SERVICE_KEY` (tool `get_team_budget`) | Local MCP shim on `:3300` (still **Nexla** badge) or `data/budget.json` |
 
 ```bash
-# Nexla (when ToolSet MCP is ready)
-export NEXLA_MCP_URL="https://api-genai.nexla.io/mcp/service_key/<server_key>"
-export NEXLA_SERVICE_KEY="nxl_sk_...."
+# Demo (default): local Nexla-compatible shim — npm run start:phase2 starts it
+export NEXLA_USE_SHIM=1
+export NEXLA_MCP_URL="http://127.0.0.1:3300/mcp"
+export NEXLA_SERVICE_KEY="nxl_sk_secgate_demo_shim"
+
+# Booth / real ToolSet MCP when ready:
+# export NEXLA_USE_SHIM=0
+# export NEXLA_MCP_URL="https://api-genai.nexla.io/mcp/service_key/<server_key>"
+# export NEXLA_SERVICE_KEY="nxl_sk_...."
 # then: npm run start:phase2
 ```
 
