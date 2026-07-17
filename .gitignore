@@ -8,4 +8,8 @@ dist/
 coverage/
 .turbo/
 data/events.json
+data/tunnel-url.txt
+data/tunnel-subdomain.txt
+data/lan-url.txt
 !data/.gitkeep
+.secgate-logs/

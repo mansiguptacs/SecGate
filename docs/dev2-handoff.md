@@ -6,8 +6,8 @@ Laptop A connects through the **Pomerium policy shim** (identity-aware gateway) 
 
 | Item | Status | Value |
 |------|--------|-------|
-| Gateway base URL (local) | **Ready** | `http://<Laptop-B-LAN-IP>:3200` or tunnel URL below |
-| Public tunnel URL | **LIVE** | `https://kyle-leader-lightning-radio.trycloudflare.com` |
+| Gateway base URL (**LAN — primary**) | **Ready** | `http://172.24.82.134:3200` (or current Laptop B LAN IP) |
+| Public tunnel URL | **LIVE (quick tunnel)** | `https://via-joy-hint-written.trycloudflare.com` — keep alive with `npm run tunnel:gateway` |
 | MCP transport | Ready | HTTP JSON tool routes (streamable-HTTP when real Pomerium MCP lands) |
 | Dev identity | Ready | `dev@secgate.local` |
 | **Dev bearer token** | Ready | `dev-agent-token-PHASE2` |
@@ -27,13 +27,16 @@ Authorization: Bearer guardian-agent-token-PHASE2 # guardian only (do NOT put on
 | `guardian` | all tools | — |
 | quarantined `dev-agent` | nothing | even `plan_*` → **403** |
 
-## Live tunnels (Laptop B — updated Jul 17 2026)
+## Connectivity (Laptop B — LAN first)
 
 | Endpoint | URL | Who uses it |
 |----------|-----|-------------|
-| **Gateway (MCP)** `:3200` | `https://kyle-leader-lightning-radio.trycloudflare.com` | **Laptop A** — Cursor MCP |
-| Control Tower / budget `:3100` | `https://region-cancelled-suites-phpbb.trycloudflare.com` | Optional remote budget/dashboard |
+| **Gateway (MCP) LAN — primary** `:3200` | `http://172.24.82.134:3200` | **Laptop A** — Cursor MCP |
+| **Gateway quick tunnel (LIVE)** `:3200` | `https://via-joy-hint-written.trycloudflare.com` | **Laptop A** when LAN blocked — `npm run tunnel:gateway` |
+| Gateway stable backup | `data/tunnel-url.txt` (after `npm run start:stable`) | Named CF / ngrok / localtunnel |
 | Control Tower (local) | `http://localhost:3100/` | **Laptop B** operator |
+
+**Live quick tunnel (Jul 17 2026):** `https://via-joy-hint-written.trycloudflare.com` — auto-restart via `scripts/keep-gateway-tunnel.sh` / `npm run tunnel:gateway`. Hostname changes if the keeper restarts cloudflared; check `.secgate-logs/gateway-tunnel-url.txt`.
 
 **Dev bearer token (Laptop A only):** `dev-agent-token-PHASE2`
 
@@ -48,45 +51,50 @@ Quick Cursor MCP paste: see [`docs/cursor-mcp.json`](./cursor-mcp.json) and [`do
 
 ---
 
-## Public tunnel (pick one)
-
-Run **on Laptop B** after `npm run start:phase2` (gateway listens on **:3200**).
-
-### Option A — Pomerium `pom.run` (preferred if you have it)
+## How Laptop B exposes the gateway
 
 ```bash
-# From Pomerium CLI (if installed)
-pomerium run --from https://secgate.localhost.pomerium.io --to http://127.0.0.1:3200
-# or reverse tunnel:
-ssh -R 0:127.0.0.1:3200 ssh.pom.run
+# Preferred one-shot: ensure phase2 + print LAN + start stable tunnel backup
+npm run start:stable
+# or: bash scripts/start-stable-gateway.sh
 ```
 
-Copy the printed HTTPS URL → that is Laptop A's MCP base URL.
-
-### Option B — Cloudflare Tunnel (pragmatic fallback)
-
-```bash
-brew install cloudflared   # once
-cloudflared tunnel --url http://127.0.0.1:3200
-```
-
-Use the `https://*.trycloudflare.com` URL.
-
-### Option C — ngrok
-
-```bash
-ngrok http 3200
-```
-
-Use the `https://…ngrok…` forwarding URL.
-
-### Option D — same Wi‑Fi LAN (venue-dependent)
+### Option A — same Wi‑Fi LAN (**default**)
 
 ```text
 http://<Laptop-B-IP>:3200
 ```
 
-Find IP: `ipconfig getifaddr en0` (macOS). Venue guest Wi‑Fi often blocks client-to-client — prefer A/B/C.
+Find IP: `ipconfig getifaddr en0` (macOS). Gateway binds `0.0.0.0:3200`.
+
+Venue guest Wi‑Fi sometimes blocks client-to-client — only then use a tunnel below.
+
+### Option B — stable tunnel backup (`start-stable-gateway.sh`)
+
+Priority inside the script:
+
+1. Named Cloudflare tunnel (`SECGATE_CF_TUNNEL_TOKEN` / `SECGATE_CF_TUNNEL_NAME`)
+2. ngrok reserved domain (`SECGATE_NGROK_DOMAIN`)
+3. `ssh -R` (`SECGATE_SSH_TUNNEL_HOST` + optional `SECGATE_SSH_TUNNEL_URL`)
+4. `npx localtunnel --port 3200 --subdomain secgate-hack` (or saved `data/tunnel-subdomain.txt`)
+
+URL is written to **`data/tunnel-url.txt`** (gitignored).
+
+### Option C — Pomerium `pom.run` (if you have it)
+
+```bash
+pomerium run --from https://secgate.localhost.pomerium.io --to http://127.0.0.1:3200
+# or reverse tunnel:
+ssh -R 0:127.0.0.1:3200 ssh.pom.run
+```
+
+### Option D — Cloudflare / ngrok quick tunnels (**last resort**)
+
+```bash
+npm run tunnel:gateway          # resilient keep-alive loop; prints URL to .secgate-logs/gateway-tunnel-url.txt
+# or: cloudflared tunnel --url http://127.0.0.1:3200
+# or: ngrok http 3200
+```
 
 ## Cursor / Claude Code MCP config
 
@@ -94,7 +102,7 @@ Find IP: `ipconfig getifaddr en0` (macOS). Venue guest Wi‑Fi often blocks clie
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://REPLACE_WITH_TUNNEL_URL",
+      "url": "https://via-joy-hint-written.trycloudflare.com",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
@@ -104,6 +112,8 @@ Find IP: `ipconfig getifaddr en0` (macOS). Venue guest Wi‑Fi often blocks clie
 }
 ```
 
+If LAN is blocked, replace `url` with the HTTPS value from Laptop B’s `data/tunnel-url.txt`.
+
 **Note:** Phase 2 currently exposes **HTTP JSON tool routes** (same paths as Phase 1: `/plan_deployment`, etc.) behind the policy shim — not full MCP streamable-HTTP yet. Until real Pomerium MCP is swapped in, Laptop A can:
 
 1. Use curl / a thin agent driver against the tunnel URL with the bearer token, **or**
@@ -112,7 +122,7 @@ Find IP: `ipconfig getifaddr en0` (macOS). Venue guest Wi‑Fi often blocks clie
 Example smoke (from Laptop A):
 
 ```bash
-export SECGATE=https://REPLACE_WITH_TUNNEL_URL
+export SECGATE=http://172.24.82.134:3200   # or backup from data/tunnel-url.txt
 export TOK=dev-agent-token-PHASE2
 
 curl -s "$SECGATE/plan_deployment" \
