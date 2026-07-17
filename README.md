@@ -6,6 +6,36 @@ Zero-trust guardrail for infra agents: every infra change is cost-estimated and 
 
 See [PLAN.md](./PLAN.md) for the full architecture and demo story.
 
+## Phase 5 — Demo polish (Control Tower)
+
+Scriptable 3-minute demo on one dark Control Tower screen. Keypress-driven scenes; tickets + ticket-driver as Laptop A fallback.
+
+```bash
+npm install && npm run build
+npm run test:phase5
+npm run start:phase2          # Terminal 1 — stack
+# open http://localhost:3100/  (full-screen, zoom ~125%)
+npm run demo                  # Terminal 2 — director (keys 0–4 / n / q)
+```
+
+| Scene | What fires |
+|-------|------------|
+| **0** Cold open | Gate OFF → 8×A100 disaster → spend ~**$12,400** red |
+| **1** Happy path | Gate ON → clean ticket → approve → lease URL (~$3/mo) |
+| **2** Attack | Poisoned → reject → apply **403**×3 → quarantine + PPL panel |
+| **3** Orphan | Pre-seed idle untagged → guardian destroy → spend drops |
+| **4** Close | Architecture / sponsor pause |
+
+```bash
+npm run demo -- --dry-run     # rehearse scene list without stack
+npm run demo -- 1             # fire one scene
+npm run demo -- --all         # 0→4 sequential
+npm run agent:clean           # Laptop A fallback (gateway :3200)
+npm run agent:poisoned
+```
+
+Tickets: [`tickets/clean.md`](./tickets/clean.md), [`tickets/poisoned.md`](./tickets/poisoned.md).
+
 ## Phase 4 status (Zero + Nexla)
 
 Guardian enriches decisions with **Zero.xyz** pricing and **Nexla** budget/spend when configured. Offline defaults remain the static price table + `data/budget.json` ($500). Timeouts ≤3s → fallback. Control Tower shows **Zero/table** and **Nexla/local** badges on verdict chats.
@@ -40,7 +70,7 @@ Full env table: [docs/akash-backend.md](./docs/akash-backend.md).
 |-------|------|------|
 | Control Tower + MCP API | `:3100` | Dashboard + proposals/events |
 | Policy gateway | `:3200` | Bearer identity + per-tool allow/deny + audit |
-| Guardian | — | Budget approve/reject + auto-apply + quarantine rewrite |
+| Guardian | — | Budget approve/reject + auto-apply + quarantine + orphan sweep |
 
 ```bash
 npm install && npm run build
@@ -64,8 +94,6 @@ Runnable **without** the gateway. Temporary HTTP JSON API mirrors the MCP tools.
 | `dashboard/` | Control Tower — spend, ALLOW/BLOCKED feed, chat, deployments |
 | `shared/` | Pricing table (8×A100 ≈ **$12,400/mo**) + shared types |
 
-**Out of scope until Phase 2:** Pomerium Docker, real Akash / Zero / Nexla, Laptop A tunnel.
-
 ## Quick start
 
 ```bash
@@ -75,8 +103,10 @@ npm run test:phase1          # mock backend
 npm run test:phase2          # Pomerium shim
 npm run test:phase3          # Akash dry-run backend
 npm run test:phase4          # Zero + Nexla adapters / fallbacks
+npm run test:phase5          # demo director dry-run + orphan criteria
 npm run start:phase2         # API + Pomerium shim + guardian (BACKEND=mock)
 # BACKEND=akash npm run start:phase3   # Akash dry-run or live if AKASH_API_KEY set
+npm run demo                 # keypress scenes against running stack
 ```
 
 Open **http://localhost:3100/** for the Control Tower.  
@@ -87,7 +117,7 @@ Agents hit **http://localhost:3200/** with a bearer token (Phase 2).
 ```bash
 # plan cheap staging API
 curl -s localhost:3100/plan_deployment -H 'content-type: application/json' \
-  -d '{"name":"staging-api","gpu":"none","gpuCount":1}' | jq
+  -d '{"name":"staging-api","gpu":"none","gpuCount":1,"tags":{"owner":"maya.chen"}}' | jq
 
 # estimate (creates pending proposal) — guardian will approve+apply within ~2s
 curl -s localhost:3100/estimate_cost -H 'content-type: application/json' \
@@ -99,16 +129,21 @@ curl -s localhost:3100/list_deployments | jq
 ### Manual smoke (poisoned 8×A100)
 
 ```bash
-curl -s localhost:3100/plan_deployment -H 'content-type: application/json' \
+curl -s localhost:3200/plan_deployment \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer dev-agent-token-PHASE2' \
   -d '{"name":"load-test","gpu":"A100","gpuCount":8}' | jq
 
-curl -s localhost:3100/estimate_cost -H 'content-type: application/json' \
+curl -s localhost:3200/estimate_cost \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer dev-agent-token-PHASE2' \
   -d '{"planId":"PLAN_ID"}' | jq
 # guardian rejects (~$12.4k/mo > $500)
 
 # direct apply as dev-agent → 403
-curl -s -o /dev/null -w '%{http_code}\n' localhost:3100/apply_deployment \
-  -H 'content-type: application/json' -H 'x-secgate-actor: dev-agent' \
+curl -s -o /dev/null -w '%{http_code}\n' localhost:3200/apply_deployment \
+  -H 'content-type: application/json' \
+  -H 'Authorization: Bearer dev-agent-token-PHASE2' \
   -d '{"proposalId":"PROP_ID"}'
 ```
 
@@ -129,6 +164,9 @@ Base URL: `http://localhost:3100`
 | GET | `/events` | Shared event log (dashboard polls this) |
 | GET | `/proposals?status=pending` | Guardian polls this |
 | POST | `/proposals/:id/decide` | Guardian approve/reject |
+| POST | `/admin/gate` | Demo: `{ "mode": "on"\|"off" }` |
+| POST | `/admin/demo/disaster` | Scene 0 seed (8×A100, gate OFF) |
+| POST | `/admin/demo/orphan` | Scene 3 seed (idle untagged) |
 
 Identity header (Phase 1 stand-in): `x-secgate-actor: dev-agent|guardian`  
 Phase 2 gateway: `Authorization: Bearer dev-agent-token-PHASE2|guardian-agent-token-PHASE2`
@@ -141,8 +179,11 @@ SecGate/
   infra-mcp/    # HTTP API + mock/Akash backends + dashboard static
   infra-mcp/akash/  # staging-api.sdl.yml (nginx:alpine)
   pomerium/     # PPL YAML + policy shim (+ docker stub for real Pomerium)
-  guardian/     # budget policy loop + quarantine
+  guardian/     # budget policy loop + quarantine + orphan sweep
   dashboard/    # Control Tower static UI
+  agents/       # ticket driver (clean / poisoned)
+  demo/         # demo-director keypress scenes
+  tickets/      # clean.md + poisoned.md
   data/         # events.json (runtime)
   docs/         # Dev 2 handoff + Akash + Phase 4 sponsors
 ```
@@ -151,12 +192,6 @@ SecGate/
 
 See **[docs/dev2-handoff.md](./docs/dev2-handoff.md)** for tokens, tunnel options (`pom.run` / cloudflared / ngrok), and smoke tests.  
 Sponsor wiring: **[docs/phase4-sponsors.md](./docs/phase4-sponsors.md)** · **[docs/akash-backend.md](./docs/akash-backend.md)**.
-
-## Next (Phase 5)
-
-1. Demo polish: tickets, demo-director keypress scenes, orphan sweep  
-2. Control Tower “wow” (spend counter, quarantine PPL animation)  
-3. Optional: real Pomerium MCP + IdP  
 
 ## License
 

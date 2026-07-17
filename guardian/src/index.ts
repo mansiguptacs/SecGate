@@ -1,4 +1,4 @@
-import type { CostEstimate, Proposal, SecGateEvent } from "@secgate/shared";
+import type { CostEstimate, Proposal, SecGateEvent, Deployment } from "@secgate/shared";
 import { evaluateProposal } from "./policy";
 import { AbuseTracker } from "./abuse";
 import {
@@ -9,12 +9,15 @@ import {
   getTeamBudget,
   type BudgetProviderDeps,
 } from "./budget-provider";
+import { findOrphans, type OrphanCriteria } from "./orphan";
 
 const MCP_URL = process.env.SECGATE_MCP_URL ?? "http://localhost:3100";
 const BUDGET = Number(process.env.SECGATE_BUDGET_USD ?? 500);
 const POLL_MS = Number(process.env.SECGATE_GUARDIAN_POLL_MS ?? 1500);
 const AUTO_APPLY = process.env.SECGATE_GUARDIAN_AUTO_APPLY !== "0";
 const ABUSE_THRESHOLD = Number(process.env.SECGATE_ABUSE_THRESHOLD ?? 3);
+const ORPHAN_IDLE_MIN = Number(process.env.SECGATE_ORPHAN_IDLE_MIN ?? 15);
+const ORPHAN_SWEEP = process.env.SECGATE_ORPHAN_SWEEP !== "0";
 
 function gatewayUrl(): string {
   return process.env.SECGATE_GATEWAY_URL ?? "";
@@ -237,17 +240,92 @@ export async function processAbuseOnce(
   return { quarantined };
 }
 
+interface ListDeploymentsResponse {
+  ok?: boolean;
+  result?: {
+    deployments: Deployment[];
+    committedSpendUsd?: number;
+  };
+  deployments?: Deployment[];
+}
+
+/**
+ * Destroy idle or untagged deployments via guardian identity (orphan sweep).
+ */
+export async function processOrphanSweepOnce(
+  mcpUrl = MCP_URL,
+  gwUrl = gatewayUrl(),
+  criteria: OrphanCriteria = {
+    idleMinutes: ORPHAN_IDLE_MIN,
+    untaggedIsOrphan: true,
+  }
+): Promise<{ destroyed: string[]; orphansFound: number }> {
+  const destroyed: string[] = [];
+  const applyBase = gwUrl || mcpUrl;
+
+  let deployments: Deployment[] = [];
+  try {
+    const listed = await fetchJson<ListDeploymentsResponse>(
+      `${mcpUrl}/list_deployments`,
+      { headers: authHeaders() }
+    );
+    deployments =
+      listed.result?.deployments ??
+      listed.deployments ??
+      [];
+  } catch {
+    const state = await fetchJson<{ deployments: Deployment[] }>(
+      `${mcpUrl}/state`
+    );
+    deployments = (state.deployments ?? []).filter((d) => d.status === "running");
+  }
+
+  const running = deployments.filter((d) => d.status === "running");
+  // Skip sweep while SecGate is OFF (cold-open disaster must stay on screen)
+  try {
+    const gateRes = await fetchJson<{ gate?: string }>(`${mcpUrl}/admin/gate`);
+    if (gateRes.gate === "off") {
+      return { destroyed: [], orphansFound: 0 };
+    }
+  } catch {
+    /* older servers without /admin/gate — continue */
+  }
+
+  const orphans = findOrphans(running, criteria);
+
+  for (const orphan of orphans) {
+    try {
+      await fetchJson(`${applyBase}/destroy_deployment`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ deploymentId: orphan.id }),
+      });
+      console.log(
+        `[guardian] ORPHAN destroyed ${orphan.id} (${orphan.name}) — idle/untagged, freed $${orphan.usdPerMonth}/mo`
+      );
+      destroyed.push(orphan.id);
+    } catch (err) {
+      console.error(`[guardian] orphan destroy failed for ${orphan.id}:`, err);
+    }
+  }
+
+  return { destroyed, orphansFound: orphans.length };
+}
+
 async function loop(): Promise<void> {
   const tracker = new AbuseTracker({ threshold: ABUSE_THRESHOLD });
   const seenIds = new Set<string>();
   const budget = await getTeamBudget();
   console.log(
-    `[guardian] watching mcp=${MCP_URL} gateway=${gatewayUrl() || "(none)"} budget=$${budget.monthlyBudgetUsd}/mo (${budget.source}) poll=${POLL_MS}ms abuse_threshold=${ABUSE_THRESHOLD}`
+    `[guardian] watching mcp=${MCP_URL} gateway=${gatewayUrl() || "(none)"} budget=$${budget.monthlyBudgetUsd}/mo (${budget.source}) poll=${POLL_MS}ms abuse_threshold=${ABUSE_THRESHOLD} orphan_idle=${ORPHAN_IDLE_MIN}min sweep=${ORPHAN_SWEEP}`
   );
   for (;;) {
     try {
       await processPendingOnce();
       await processAbuseOnce(tracker, MCP_URL, gatewayUrl(), seenIds);
+      if (ORPHAN_SWEEP) {
+        await processOrphanSweepOnce();
+      }
     } catch (err) {
       console.error("[guardian] poll error:", (err as Error).message);
     }
@@ -266,3 +344,5 @@ export { evaluateProposal, AbuseTracker };
 export { toolBase, authHeaders };
 export { getPriceQuote, tableQuote, clearPricingCache, parseHourlyFromZeroOutput } from "./pricing-provider";
 export { getTeamBudget, loadLocalBudget, fetchNexlaBudget } from "./budget-provider";
+export { findOrphans, isOrphan } from "./orphan";
+// processOrphanSweepOnce already exported above

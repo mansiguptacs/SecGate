@@ -18,11 +18,16 @@
     "start:phase1": "node scripts/start-phase1.js",
     "start:phase2": "node scripts/start-phase2.js",
     "start:phase3": "BACKEND=akash node scripts/start-phase2.js",
+    "demo": "node demo/director.js",
+    "demo:dry": "node demo/director.js --dry-run",
+    "agent:clean": "node agents/ticket-driver.js clean",
+    "agent:poisoned": "node agents/ticket-driver.js poisoned",
     "test": "npm run test -w infra-mcp && npm run test -w guardian && npm run test -w @secgate/pomerium",
     "test:phase1": "npm run test:phase1 -w infra-mcp && npm run test -w guardian",
     "test:phase2": "npm run test -w @secgate/pomerium",
     "test:phase3": "npm run test:phase3 -w infra-mcp",
-    "test:phase4": "npm run test -w guardian -- test/phase4.test.ts"
+    "test:phase4": "npm run test -w guardian -- test/phase4.test.ts",
+    "test:phase5": "npm run build && npx tsx --test guardian/test/orphan.test.ts && node demo/test-phase5.js"
   },
   "engines": {
     "node": ">=18"

@@ -75,9 +75,14 @@ export interface Deployment {
   akashLeaseId: string;
   liveUrl: string;
   createdAt: string;
+  /** Last observed activity; defaults to createdAt. Used by orphan sweep. */
+  lastActivityAt?: string;
   destroyedAt?: string;
   ownerTag?: string;
 }
+
+/** Runtime gate flag surfaced to Control Tower + demo director. */
+export type GateMode = "on" | "off";
 
 export interface BudgetConfig {
   monthlyBudgetUsd: number;

@@ -48,19 +48,22 @@
     <section class="pane deploy-pane">
       <h2>Running deployments</h2>
       <div class="pane-body" id="deployList"></div>
-      <div class="policy-stub">
+      <div class="policy-stub" id="policyPanel">
         <h3>Policy</h3>
         <p class="muted" id="policyNote">Pomerium PPL (policy shim — swap for real Pomerium when IdP ready)</p>
         <pre id="policySnippet">allow plan_*, estimate_*, list_*
 apply_*/destroy_* → guardian only
 budget_cap: $500/mo</pre>
+        <pre id="policyDiff" class="policy-diff" hidden></pre>
       </div>
     </section>
   </main>
 
+  <div class="flash-overlay" id="flashOverlay" aria-hidden="true"></div>
+
   <footer class="status-bar">
     <span id="conn">connecting…</span>
-    <span id="phaseLabel">Phase 1 mock stack</span>
+    <span id="phaseLabel">Phase 5 Control Tower</span>
   </footer>
   <script src="/app.js"></script>
 </body>

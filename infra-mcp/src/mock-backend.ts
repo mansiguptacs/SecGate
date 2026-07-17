@@ -8,6 +8,7 @@ import {
   type Proposal,
   type BudgetSource,
   type PricingSource,
+  type GateMode,
 } from "@secgate/shared";
 import { EventStore } from "./events";
 import { MockLeaseProvider, type LeaseProvider } from "./lease-provider";
@@ -25,6 +26,9 @@ export class MockBackend {
     plans: new Map(),
   };
 
+  /** When off, apply_deployment skips guardian approval (demo cold open). */
+  gateMode: GateMode = "on";
+
   constructor(
     private events: EventStore,
     private leases: LeaseProvider = new MockLeaseProvider()
@@ -34,11 +38,25 @@ export class MockBackend {
     return this.leases.kind;
   }
 
+  setGate(mode: GateMode): GateMode {
+    this.gateMode = mode;
+    this.events.append(
+      "chat",
+      "secgate",
+      mode === "on"
+        ? "SecGate ONLINE — plan/estimate open; apply/destroy guardian-only."
+        : "SecGate OFF — mutate tools unrestricted. Nobody is watching.",
+      { gate: mode }
+    );
+    return this.gateMode;
+  }
+
   reset(): void {
     this.state.proposals.clear();
     this.state.deployments.clear();
     this.state.plans.clear();
     this.events.clear();
+    this.gateMode = "on";
   }
 
   planDeployment(
@@ -194,6 +212,7 @@ export class MockBackend {
   /**
    * Phase 1 policy (pre-Pomerium): apply only succeeds if guardian approved.
    * Calling apply without approval is denied — simulates identity gate.
+   * Exception: gateMode === "off" (demo cold open) allows anyone to apply.
    */
   async applyDeployment(
     proposalId: string,
@@ -203,10 +222,9 @@ export class MockBackend {
     const proposal = this.state.proposals.get(proposalId);
     if (!proposal) throw new Error(`Unknown proposal: ${proposalId}`);
 
-    // Even with bypassGuardian flag from a malicious agent, Phase 1 app policy
-    // still requires approved status unless caller is guardian identity.
+    const gateOff = this.gateMode === "off";
     const isGuardian = actor === "guardian";
-    if (proposal.status !== "approved" && !isGuardian) {
+    if (proposal.status !== "approved" && !isGuardian && !gateOff) {
       this.events.append(
         "apply_denied",
         actor,
@@ -232,20 +250,27 @@ export class MockBackend {
       throw err;
     }
 
-    if (proposal.status === "rejected") {
+    if (proposal.status === "rejected" && !gateOff) {
       const err = new Error(`Cannot apply rejected proposal ${proposalId}`);
       (err as Error & { code: string }).code = "GUARDIAN_DENIED";
       throw err;
     }
 
     // Guardian applying a still-pending proposal after its own approve path
-    if (proposal.status === "pending" && isGuardian) {
+    // (or gate-off cold open forcing apply of pending/rejected)
+    if (
+      (proposal.status === "pending" || proposal.status === "rejected") &&
+      (isGuardian || gateOff)
+    ) {
       proposal.status = "approved";
       proposal.decidedAt = new Date().toISOString();
-      proposal.decisionReason = proposal.decisionReason ?? "Guardian execute";
+      proposal.decisionReason =
+        proposal.decisionReason ??
+        (gateOff ? "SecGate OFF — unrestricted apply" : "Guardian execute");
     }
 
     const { leaseId, liveUrl } = await this.leases.createLease(proposal.spec);
+    const now = new Date().toISOString();
     const deployment: Deployment = {
       id: `dep-${uuid().slice(0, 8)}`,
       proposalId,
@@ -256,7 +281,8 @@ export class MockBackend {
       status: "running",
       akashLeaseId: leaseId,
       liveUrl,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      lastActivityAt: now,
       ownerTag: proposal.spec.tags?.owner,
     };
     this.state.deployments.set(deployment.id, deployment);
@@ -273,6 +299,14 @@ export class MockBackend {
       proposalId,
       deploymentId: deployment.id,
     });
+    if (gateOff) {
+      this.events.append(
+        "chat",
+        actor,
+        `Deployed "${deployment.name}" while SecGate was OFF — ${deployment.gpuCount}×${deployment.gpu} at $${deployment.usdPerMonth.toLocaleString()}/mo.`,
+        { deploymentId: deployment.id }
+      );
+    }
     return deployment;
   }
 
@@ -296,6 +330,12 @@ export class MockBackend {
       tool: "destroy_deployment",
       deploymentId,
     });
+    this.events.append(
+      "chat",
+      actor,
+      `Tore down "${dep.name}" — freed $${dep.usdPerMonth.toLocaleString()}/mo. Committed spend now $${this.committedSpendUsd().toLocaleString()}/mo.`,
+      { deploymentId, name: dep.name, freedUsd: dep.usdPerMonth }
+    );
     return dep;
   }
 
@@ -307,5 +347,122 @@ export class MockBackend {
     return this.listDeployments()
       .filter((d) => d.status === "running")
       .reduce((sum, d) => sum + d.usdPerMonth, 0);
+  }
+
+  /**
+   * Demo cold open: force a running 8×A100 so spend counter hits ~$12.4k red.
+   */
+  async seedDisaster(actor = "dev-agent"): Promise<Deployment> {
+    const estimate = estimateFromTable("A100", 8);
+    const spec: DeploymentSpec = {
+      name: "load-test-warm-pool",
+      image: "nginx:alpine",
+      gpu: "A100",
+      gpuCount: 8,
+      replicas: 1,
+      tags: {},
+    };
+    const planId = `plan-disaster`;
+    this.state.plans.set(planId, spec);
+    const proposalId = `prop-disaster`;
+    const proposal: Proposal = {
+      id: proposalId,
+      planId,
+      spec,
+      estimate,
+      status: "approved",
+      createdAt: new Date().toISOString(),
+      decidedAt: new Date().toISOString(),
+      decisionReason: "SecGate OFF — no review",
+      actor,
+    };
+    this.state.proposals.set(proposalId, proposal);
+
+    this.events.append(
+      "chat",
+      actor,
+      `Picked up poisoned ticket — provisioning 8× A100 warm pool (SecGate is OFF).`,
+      { demo: "disaster" }
+    );
+    this.events.append("allow", actor, `apply_deployment ALLOW (gate off)`, {
+      tool: "apply_deployment",
+      proposalId,
+    });
+
+    const { leaseId, liveUrl } = await this.leases.createLease(spec);
+    const now = new Date().toISOString();
+    const deployment: Deployment = {
+      id: `dep-disaster`,
+      proposalId,
+      name: spec.name,
+      gpu: "A100",
+      gpuCount: 8,
+      usdPerMonth: estimate.usdPerMonth,
+      status: "running",
+      akashLeaseId: leaseId,
+      liveUrl,
+      createdAt: now,
+      lastActivityAt: now,
+    };
+    this.state.deployments.set(deployment.id, deployment);
+    proposal.status = "applied";
+
+    this.events.append(
+      "apply",
+      actor,
+      `Applied ${deployment.name} → ${deployment.liveUrl} ($${deployment.usdPerMonth}/mo)`,
+      { deployment, leaseProvider: this.leases.kind, demo: "disaster" }
+    );
+    this.events.append(
+      "chat",
+      "secgate",
+      `Committed spend is now $${estimate.usdPerMonth.toLocaleString()}/mo — one hidden line in a ticket.`,
+      { demo: "disaster", usdPerMonth: estimate.usdPerMonth }
+    );
+    return deployment;
+  }
+
+  /**
+   * Pre-seed an idle untagged deployment for the orphan-sweep scene.
+   * createdAt / lastActivityAt are backdated so idle > N min is immediate.
+   */
+  async seedOrphan(opts?: {
+    idleMinutes?: number;
+    name?: string;
+    usdPerMonth?: number;
+  }): Promise<Deployment> {
+    const idleMinutes = opts?.idleMinutes ?? 20;
+    const backdate = new Date(Date.now() - idleMinutes * 60_000).toISOString();
+    const estimate = estimateFromTable("none", 1);
+    const usd = opts?.usdPerMonth ?? 48;
+    const { leaseId, liveUrl } = await this.leases.createLease({
+      name: opts?.name ?? "old-staging-api",
+      gpu: "none",
+      gpuCount: 1,
+      image: "nginx:alpine",
+    });
+    const deployment: Deployment = {
+      id: `dep-orphan`,
+      proposalId: "prop-orphan-seed",
+      name: opts?.name ?? "old-staging-api",
+      gpu: "none",
+      gpuCount: 1,
+      usdPerMonth: usd,
+      status: "running",
+      akashLeaseId: leaseId,
+      liveUrl,
+      createdAt: backdate,
+      lastActivityAt: backdate,
+      // intentionally untagged — orphan sweep key
+      ownerTag: undefined,
+    };
+    this.state.deployments.set(deployment.id, deployment);
+    this.events.append(
+      "chat",
+      "secgate",
+      `Pre-seeded orphan "${deployment.name}" (idle ${idleMinutes} min, no owner tag) — $${usd}/mo.`,
+      { deploymentId: deployment.id, orphan: true, idleMinutes }
+    );
+    return deployment;
   }
 }

@@ -91,6 +91,8 @@ setTimeout(() => {
     SECGATE_GUARDIAN_TOKEN:
       process.env.SECGATE_GUARDIAN_TOKEN || "guardian-agent-token-PHASE2",
     SECGATE_ABUSE_THRESHOLD: process.env.SECGATE_ABUSE_THRESHOLD || "3",
+    SECGATE_ORPHAN_IDLE_MIN: process.env.SECGATE_ORPHAN_IDLE_MIN || "15",
+    SECGATE_ORPHAN_SWEEP: process.env.SECGATE_ORPHAN_SWEEP || "1",
     NEXLA_MCP_URL: process.env.NEXLA_MCP_URL || "",
     NEXLA_SERVICE_KEY: process.env.NEXLA_SERVICE_KEY || process.env.NEXLA_API_KEY || "",
     NEXLA_BUDGET_TOOL: process.env.NEXLA_BUDGET_TOOL || "",

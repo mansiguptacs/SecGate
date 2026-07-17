@@ -208,6 +208,7 @@ export function createApp(opts?: {
       pricingSourceDefault: "table" as PricingSource,
       deployments: backend.listDeployments().filter((d) => d.status === "running"),
       policy,
+      gate: backend.gateMode,
       phase: Number(process.env.SECGATE_PHASE ?? 1),
       backend: backendMode,
       leaseProvider: leaseKind,
@@ -262,6 +263,7 @@ export function createApp(opts?: {
       committedSpendUsd: backend.committedSpendUsd(),
       proposals: backend.listProposals(),
       deployments: backend.listDeployments(),
+      gate: backend.gateMode,
       backend: backendMode,
       leaseProvider: leaseKind,
     });
@@ -269,7 +271,57 @@ export function createApp(opts?: {
 
   app.post("/admin/reset", (_req, res) => {
     backend.reset();
-    res.json({ ok: true });
+    res.json({ ok: true, gate: backend.gateMode });
+  });
+
+  /** Demo: toggle SecGate ON/OFF (cold open). */
+  app.post("/admin/gate", (req, res) => {
+    const mode = String(req.body?.mode ?? req.body?.gate ?? "on").toLowerCase();
+    if (mode !== "on" && mode !== "off") {
+      res.status(400).json({ ok: false, error: "mode must be on|off" });
+      return;
+    }
+    backend.setGate(mode);
+    res.json({ ok: true, gate: backend.gateMode });
+  });
+
+  app.get("/admin/gate", (_req, res) => {
+    res.json({ ok: true, gate: backend.gateMode });
+  });
+
+  /** Demo scene 0: seed 8×A100 disaster spend. */
+  app.post("/admin/demo/disaster", async (_req, res) => {
+    try {
+      backend.setGate("off");
+      const deployment = await backend.seedDisaster("dev-agent");
+      res.json({
+        ok: true,
+        gate: backend.gateMode,
+        deployment,
+        committedSpendUsd: backend.committedSpendUsd(),
+      });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: (err as Error).message });
+    }
+  });
+
+  /** Demo scene 3: pre-seed idle untagged orphan. */
+  app.post("/admin/demo/orphan", async (req, res) => {
+    try {
+      const idleMinutes = Number(req.body?.idleMinutes ?? 20);
+      const deployment = await backend.seedOrphan({
+        idleMinutes,
+        name: req.body?.name,
+        usdPerMonth: req.body?.usdPerMonth,
+      });
+      res.json({
+        ok: true,
+        deployment,
+        committedSpendUsd: backend.committedSpendUsd(),
+      });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: (err as Error).message });
+    }
   });
 
   app.use(express.static(DASHBOARD_DIR));
