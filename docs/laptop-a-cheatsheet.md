@@ -6,7 +6,7 @@ You are the **developer agent**. Laptop B runs SecGate (Control Tower + gateway 
 
 | Priority | When | MCP base URL |
 |----------|------|--------------|
-| **1. LAN (default)** | Same venue Wi‑Fi, no client isolation | `https://executive-rapid-alien-easy.trycloudflare.com` |
+| **1. LIVE quick tunnel** | Use now | `https://executive-rapid-alien-easy.trycloudflare.com` |
 | **2. Stable tunnel** | Guest Wi‑Fi blocks client↔client | URL in Laptop B’s `data/tunnel-url.txt` (localtunnel / named CF / ngrok / ssh -R) |
 | **3. Quick tunnel** | Last resort only | `*.trycloudflare.com` — **dies and changes hostname** on restart |
 
@@ -88,7 +88,7 @@ Watch Laptop B’s **Control Tower**: http://localhost:3100/ (on their screen) f
 
 | Item | Value |
 |------|-------|
-| **Gateway (LAN — primary)** | `https://executive-rapid-alien-easy.trycloudflare.com` |
+| **Gateway (LIVE tunnel)** | `https://executive-rapid-alien-easy.trycloudflare.com` |
 | Dev token | `Bearer dev-agent-token-PHASE2` |
 | Stable tunnel backup | See Laptop B `data/tunnel-url.txt` (gitignored) |
 | Control Tower (Laptop B only) | `http://localhost:3100/` |

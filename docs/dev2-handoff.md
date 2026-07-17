@@ -6,7 +6,7 @@ Laptop A connects through the **Pomerium policy shim** (identity-aware gateway) 
 
 | Item | Status | Value |
 |------|--------|-------|
-| Gateway base URL (**LAN — primary**) | **Ready** | `https://executive-rapid-alien-easy.trycloudflare.com` (or current Laptop B LAN IP) |
+| Gateway base URL (**LIVE tunnel**) | **Ready** | `https://executive-rapid-alien-easy.trycloudflare.com` |
 | Public tunnel URL | **Backup only** | See `data/tunnel-url.txt` after `npm run start:stable` |
 | MCP transport | Ready | HTTP JSON tool routes (streamable-HTTP when real Pomerium MCP lands) |
 | Dev identity | Ready | `dev@secgate.local` |
@@ -31,7 +31,7 @@ Authorization: Bearer guardian-agent-token-PHASE2 # guardian only (do NOT put on
 
 | Endpoint | URL | Who uses it |
 |----------|-----|-------------|
-| **Gateway (MCP) LAN — primary** `:3200` | `https://executive-rapid-alien-easy.trycloudflare.com` | **Laptop A** — Cursor MCP |
+| **Gateway (MCP) LIVE tunnel** `:3200` | `https://executive-rapid-alien-easy.trycloudflare.com` | **Laptop A** — Cursor MCP |
 | Gateway stable tunnel backup | `data/tunnel-url.txt` (after `npm run start:stable`) | Only if Wi‑Fi client isolation blocks LAN |
 | Control Tower (local) | `http://localhost:3100/` | **Laptop B** operator |
 
@@ -101,7 +101,7 @@ npm run tunnel:gateway          # resilient keep-alive loop; prints URL to .secg
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://via-joy-hint-written.trycloudflare.com",
+      "url": "http://172.24.82.134:3200",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
