@@ -50,6 +50,23 @@
     </div>
   </section>
 
+  <section class="audit-band" aria-label="Audit log">
+    <div class="audit-head">
+      <h2>Audit Log</h2>
+      <div class="audit-filters" id="auditFilters" role="group" aria-label="Filter by sponsor">
+        <button type="button" class="audit-chip active" data-sponsor="all">All</button>
+        <button type="button" class="audit-chip sponsor-pomerium" data-sponsor="pomerium">Pomerium</button>
+        <button type="button" class="audit-chip sponsor-zero" data-sponsor="zero">Zero</button>
+        <button type="button" class="audit-chip sponsor-nexla" data-sponsor="nexla">Nexla</button>
+        <button type="button" class="audit-chip sponsor-akash" data-sponsor="akash">Akash</button>
+        <button type="button" class="audit-chip sponsor-guardian" data-sponsor="guardian">Guardian</button>
+      </div>
+    </div>
+    <div class="audit-rail" id="auditFeed">
+      <div class="audit-empty" id="auditEmpty">Waiting for audit events…</div>
+    </div>
+  </section>
+
   <main class="tower">
     <section class="pane chat-pane">
       <h2>Agent activity</h2>

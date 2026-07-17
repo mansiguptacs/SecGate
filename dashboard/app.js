@@ -17,6 +17,9 @@
   const flashOverlay = document.getElementById("flashOverlay");
   const timelineFeed = document.getElementById("timelineFeed");
   const timelineEmpty = document.getElementById("timelineEmpty");
+  const auditFeed = document.getElementById("auditFeed");
+  const auditEmpty = document.getElementById("auditEmpty");
+  const auditFilters = document.getElementById("auditFilters");
 
   let seen = new Set();
   let displaySpend = 0;
@@ -27,6 +30,8 @@
   let lastSnippet = "";
   let lastQuarantineCount = 0;
   let timelineCount = 0;
+  let auditCount = 0;
+  let auditFilter = "all";
 
   const SPONSOR_LABEL = {
     pomerium: "Pomerium",
@@ -310,6 +315,158 @@
     }
   }
 
+  function auditSponsors(ev) {
+    if (Array.isArray(ev.sponsors) && ev.sponsors.length) return ev.sponsors;
+    if (ev.sponsor) return [ev.sponsor];
+    return [];
+  }
+
+  function isAuditEvent(ev) {
+    if (!ev) return false;
+    if (ev.action || (ev.links && ev.links.length) || ev.resource) return true;
+    if (ev.sponsor) return true;
+    const kinds = {
+      plan: 1,
+      estimate: 1,
+      apply: 1,
+      apply_denied: 1,
+      destroy: 1,
+      blocked: 1,
+      allow: 1,
+      guardian_approve: 1,
+      guardian_reject: 1,
+      timeline: 1,
+    };
+    return !!kinds[ev.kind];
+  }
+
+  function resultClass(result) {
+    const r = String(result || "OK").toLowerCase();
+    if (r.includes("block") || r.includes("reject")) return "blocked";
+    if (r.includes("destroy")) return "destroyed";
+    if (r.includes("warn")) return "warn";
+    if (r.includes("allow") || r === "ok") return "allow";
+    return "ok";
+  }
+
+  function inferAction(ev) {
+    if (ev.action) return ev.action;
+    if (ev.title) return ev.title;
+    return ev.kind || "event";
+  }
+
+  function inferResult(ev) {
+    if (ev.result) return ev.result;
+    if (ev.severity === "block" || ev.kind === "blocked" || ev.kind === "apply_denied")
+      return "BLOCKED";
+    if (ev.kind === "guardian_reject") return "REJECTED";
+    if (ev.kind === "destroy") return "DESTROYED";
+    if (ev.severity === "allow" || ev.kind === "allow" || ev.kind === "guardian_approve")
+      return "ALLOW";
+    if (ev.severity === "warn") return "WARN";
+    return "OK";
+  }
+
+  function inferResource(ev) {
+    if (ev.resource) return ev.resource;
+    const d = ev.detail || {};
+    if (d.name) return String(d.name);
+    if (d.deployment && d.deployment.name) return String(d.deployment.name);
+    if (d.proposalId) return String(d.proposalId);
+    if (d.planId) return String(d.planId);
+    if (d.tool) return String(d.tool);
+    return "—";
+  }
+
+  function applyAuditFilter() {
+    if (!auditFeed) return;
+    const rows = auditFeed.querySelectorAll(".audit-row");
+    rows.forEach((row) => {
+      if (auditFilter === "all") {
+        row.classList.remove("hidden");
+        return;
+      }
+      const list = (row.dataset.sponsors || "").split(",").filter(Boolean);
+      row.classList.toggle("hidden", list.indexOf(auditFilter) === -1);
+    });
+  }
+
+  function addAudit(ev) {
+    if (!auditFeed || !isAuditEvent(ev)) return;
+    if (seen.has("audit:" + ev.id)) return;
+    seen.add("audit:" + ev.id);
+
+    if (auditEmpty) auditEmpty.remove();
+
+    const sponsors = auditSponsors(ev);
+    const action = inferAction(ev);
+    const result = inferResult(ev);
+    const resource = inferResource(ev);
+    const links = Array.isArray(ev.links) ? ev.links : [];
+
+    const row = document.createElement("div");
+    row.className = "audit-row";
+    row.dataset.sponsors = sponsors.join(",");
+    row.innerHTML =
+      '<div class="al-ts">' +
+      escapeHtml(new Date(ev.ts).toLocaleTimeString()) +
+      '</div><div class="al-actor">' +
+      escapeHtml(ev.actor || "system") +
+      '</div><div class="al-action">' +
+      escapeHtml(action) +
+      '</div><div class="al-resource" title="' +
+      escapeHtml(resource) +
+      '">' +
+      escapeHtml(resource) +
+      '</div><div class="al-result ' +
+      resultClass(result) +
+      '">' +
+      escapeHtml(result) +
+      '</div><div class="al-links">' +
+      links
+        .map(
+          (l) =>
+            '<a href="' +
+            escapeHtml(l.url) +
+            '" target="_blank" rel="noopener">' +
+            escapeHtml(l.label) +
+            "</a>"
+        )
+        .join("") +
+      "</div>" +
+      (sponsors.length
+        ? '<div class="al-sponsors">' +
+          sponsors
+            .map(
+              (s) =>
+                '<span class="al-sp sponsor-' +
+                escapeHtml(s) +
+                '">' +
+                escapeHtml(SPONSOR_LABEL[s] || s) +
+                "</span>"
+            )
+            .join("") +
+          "</div>"
+        : "");
+
+    auditFeed.appendChild(row);
+    auditCount += 1;
+    applyAuditFilter();
+    auditFeed.scrollTop = auditFeed.scrollHeight;
+  }
+
+  if (auditFilters) {
+    auditFilters.addEventListener("click", (e) => {
+      const btn = e.target.closest(".audit-chip");
+      if (!btn) return;
+      auditFilter = btn.dataset.sponsor || "all";
+      auditFilters.querySelectorAll(".audit-chip").forEach((c) => {
+        c.classList.toggle("active", c === btn);
+      });
+      applyAuditFilter();
+    });
+  }
+
   function renderDeployments(deps) {
     if (!deps || !deps.length) {
       deployList.innerHTML = '<div class="empty">No running deployments</div>';
@@ -377,6 +534,7 @@
         if (ev.kind === "chat") addChat(ev);
         addTool(ev);
         addTimeline(ev);
+        addAudit(ev);
         if (ev.detail && ev.detail.pplDiff) {
           if (policyDiff && ev.detail.snippetBefore && ev.detail.snippetAfter) {
             policyDiff.textContent =
@@ -395,6 +553,8 @@
         " events · " +
         timelineCount +
         " timeline · " +
+        auditCount +
+        " audit · " +
         new Date().toLocaleTimeString();
     } catch (err) {
       conn.textContent = "offline · " + err.message;

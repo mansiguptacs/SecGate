@@ -33,6 +33,12 @@ export interface TimelineMeta {
   severity?: EventSeverity;
 }
 
+/** Clickable console / resource link on Audit Log rows. */
+export interface AuditLink {
+  label: string;
+  url: string;
+}
+
 export interface SecGateEvent {
   id: string;
   ts: string;
@@ -44,6 +50,12 @@ export interface SecGateEvent {
   sponsor?: EventSponsor;
   title?: string;
   severity?: EventSeverity;
+  /** Dense Audit Log fields (Timeline ignores these). */
+  action?: string;
+  resource?: string;
+  result?: string;
+  sponsors?: EventSponsor[];
+  links?: AuditLink[];
 }
 
 export type ProposalStatus = "pending" | "approved" | "rejected" | "applied" | "destroyed";

@@ -7,13 +7,20 @@ import type {
   TimelineMeta,
   EventSponsor,
   EventSeverity,
+  AuditLink,
 } from "@secgate/shared";
+import { enrichAuditEvent } from "@secgate/shared";
 
 export interface AppendOpts {
   detail?: Record<string, unknown>;
   sponsor?: EventSponsor;
   title?: string;
   severity?: EventSeverity;
+  action?: string;
+  resource?: string;
+  result?: string;
+  sponsors?: EventSponsor[];
+  links?: AuditLink[];
 }
 
 export class EventStore {
@@ -57,7 +64,7 @@ export class EventStore {
     detailOrOpts?: Record<string, unknown> | AppendOpts
   ): SecGateEvent {
     const opts = toAppendOpts(detailOrOpts);
-    const event: SecGateEvent = {
+    const event: SecGateEvent = enrichAuditEvent({
       id: uuid(),
       ts: new Date().toISOString(),
       kind,
@@ -67,7 +74,12 @@ export class EventStore {
       sponsor: opts.sponsor,
       title: opts.title,
       severity: opts.severity,
-    };
+      action: opts.action,
+      resource: opts.resource,
+      result: opts.result,
+      sponsors: opts.sponsors,
+      links: opts.links,
+    });
 
     if (
       opts.sponsor &&
@@ -93,6 +105,11 @@ export class EventStore {
       kind?: EventKind;
       actor?: string;
       extra?: Record<string, unknown>;
+      action?: string;
+      resource?: string;
+      result?: string;
+      links?: AuditLink[];
+      sponsors?: EventSponsor[];
     }
   ): SecGateEvent | null {
     const title = meta.title;
@@ -107,6 +124,11 @@ export class EventStore {
         sponsor: meta.sponsor,
         title,
         severity: meta.severity ?? "info",
+        action: meta.action,
+        resource: meta.resource,
+        result: meta.result,
+        links: meta.links,
+        sponsors: meta.sponsors,
         detail: {
           blurb: meta.detail ?? meta.title,
           ...(meta.extra ?? {}),
@@ -137,32 +159,61 @@ export class EventStore {
   }
 }
 
+const AUDIT_KEYS = new Set([
+  "sponsor",
+  "title",
+  "severity",
+  "detail",
+  "action",
+  "resource",
+  "result",
+  "sponsors",
+  "links",
+]);
+
 function toAppendOpts(
   detailOrOpts?: Record<string, unknown> | AppendOpts
 ): AppendOpts {
   if (!detailOrOpts) return {};
-  const hasTimeline =
-    "sponsor" in detailOrOpts ||
-    "title" in detailOrOpts ||
-    "severity" in detailOrOpts;
+  const hasTimeline = [...AUDIT_KEYS].some((k) => k in detailOrOpts);
   if (!hasTimeline) {
     return { detail: detailOrOpts as Record<string, unknown> };
   }
   const o = detailOrOpts as AppendOpts;
   if (o.detail !== undefined) return o;
   // sponsor/title/severity present but no nested detail — leftover keys are detail
-  const { sponsor, title, severity, detail, ...rest } = detailOrOpts as Record<
-    string,
-    unknown
-  > &
-    AppendOpts;
+  const rest: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(detailOrOpts)) {
+    if (!AUDIT_KEYS.has(k)) rest[k] = v;
+  }
+  const {
+    sponsor,
+    title,
+    severity,
+    detail,
+    action,
+    resource,
+    result,
+    sponsors,
+    links,
+  } = detailOrOpts as AppendOpts;
   const bag =
     detail && typeof detail === "object" && !Array.isArray(detail)
       ? (detail as Record<string, unknown>)
       : Object.keys(rest).length
         ? rest
         : undefined;
-  return { sponsor, title, severity, detail: bag };
+  return {
+    sponsor,
+    title,
+    severity,
+    detail: bag,
+    action,
+    resource,
+    result,
+    sponsors,
+    links,
+  };
 }
 
-export type { EventSponsor, EventSeverity, TimelineMeta };
+export type { EventSponsor, EventSeverity, TimelineMeta, AuditLink };

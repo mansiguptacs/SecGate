@@ -50,7 +50,7 @@ html, body {
   z-index: 0;
 }
 
-.banner, .tower, .status-bar, .timeline-band { position: relative; z-index: 1; }
+.banner, .tower, .status-bar, .timeline-band, .audit-band { position: relative; z-index: 1; }
 
 /* ── Sponsor timeline (demo hero strip) ── */
 .timeline-band {
@@ -213,6 +213,161 @@ html, body {
 @keyframes tlFlashBlock {
   0%, 100% { background: var(--bg-1); }
   35% { background: rgba(255, 92, 92, 0.22); }
+}
+
+/* ── Audit Log (dense chronological trail) ── */
+.audit-band {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(11, 18, 16, 0.96), rgba(8, 14, 12, 0.92));
+  padding: 0.5rem 1.25rem 0.7rem;
+}
+
+.audit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+}
+
+.audit-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.audit-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.audit-chip {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.45rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.audit-chip:hover { border-color: var(--muted); color: var(--text); }
+.audit-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(61, 214, 140, 0.08);
+}
+.audit-chip.sponsor-pomerium.active { border-color: #6ec8ff; color: #6ec8ff; background: rgba(110, 200, 255, 0.08); }
+.audit-chip.sponsor-zero.active { border-color: #f0c14a; color: #f0c14a; background: rgba(240, 193, 74, 0.08); }
+.audit-chip.sponsor-nexla.active { border-color: #c49bff; color: #c49bff; background: rgba(196, 155, 255, 0.08); }
+.audit-chip.sponsor-akash.active { border-color: #ff8a5c; color: #ff8a5c; background: rgba(255, 138, 92, 0.08); }
+.audit-chip.sponsor-guardian.active { border-color: var(--accent); color: var(--accent); }
+
+.audit-rail {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  border: 1px solid var(--line);
+  background: #0a110e;
+  scroll-behavior: smooth;
+}
+
+.audit-empty {
+  color: var(--muted);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.audit-row {
+  display: grid;
+  grid-template-columns: 4.6rem 5.2rem 6.5rem minmax(0, 1fr) 4.2rem minmax(7rem, auto);
+  gap: 0.4rem 0.55rem;
+  align-items: baseline;
+  padding: 0.28rem 0.55rem;
+  border-bottom: 1px solid rgba(42, 63, 54, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.audit-row:last-child { border-bottom: none; }
+.audit-row.hidden { display: none; }
+
+.audit-row .al-ts { color: var(--muted); }
+.audit-row .al-actor { color: var(--text); font-weight: 600; }
+.audit-row .al-action { color: #b8d4c6; }
+.audit-row .al-resource {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.audit-row .al-result {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.audit-row .al-result.ok,
+.audit-row .al-result.allow { color: var(--allow); }
+.audit-row .al-result.blocked,
+.audit-row .al-result.rejected { color: var(--block); }
+.audit-row .al-result.warn,
+.audit-row .al-result.destroyed { color: var(--warn); }
+
+.audit-row .al-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.45rem;
+  justify-content: flex-end;
+}
+
+.audit-row .al-links a {
+  color: #6ec8ff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(110, 200, 255, 0.35);
+}
+.audit-row .al-links a:hover { color: #9adcff; }
+
+.audit-row .al-sponsors {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.3rem;
+  margin-top: -0.1rem;
+  padding-bottom: 0.1rem;
+}
+
+.audit-row .al-sp {
+  font-size: 0.58rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .audit-row {
+    grid-template-columns: 4rem 1fr auto;
+    grid-template-areas:
+      "ts actor result"
+      "action action action"
+      "resource resource resource"
+      "links links links";
+  }
+  .audit-row .al-ts { grid-area: ts; }
+  .audit-row .al-actor { grid-area: actor; }
+  .audit-row .al-action { grid-area: action; }
+  .audit-row .al-resource { grid-area: resource; white-space: normal; }
+  .audit-row .al-result { grid-area: result; }
+  .audit-row .al-links { grid-area: links; justify-content: flex-start; }
+  .audit-row .al-sponsors { display: none; }
 }
 
 @media (max-width: 720px) {

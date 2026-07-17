@@ -198,6 +198,18 @@ export function createApp(opts?: {
       typeof req.body?.severity === "string"
         ? (req.body.severity as string)
         : undefined;
+    const action =
+      typeof req.body?.action === "string" ? (req.body.action as string) : undefined;
+    const resource =
+      typeof req.body?.resource === "string"
+        ? (req.body.resource as string)
+        : undefined;
+    const result =
+      typeof req.body?.result === "string" ? (req.body.result as string) : undefined;
+    const sponsors = Array.isArray(req.body?.sponsors)
+      ? (req.body.sponsors as string[])
+      : undefined;
+    const links = Array.isArray(req.body?.links) ? req.body.links : undefined;
     if (!message) {
       res.status(400).json({ ok: false, error: "message required" });
       return;
@@ -206,12 +218,17 @@ export function createApp(opts?: {
       kind as any,
       actor,
       message,
-      sponsor
+      sponsor || action || links || sponsors
         ? {
             sponsor: sponsor as any,
             title: title || message.slice(0, 80),
             severity: severity as any,
             detail,
+            action,
+            resource,
+            result,
+            sponsors: sponsors as any,
+            links,
           }
         : detail
     );
@@ -233,7 +250,7 @@ export function createApp(opts?: {
       }
     }
     res.json({
-      label: "Phase 1 app-level policy (no Pomerium yet)",
+      label: "Identity-aware policy gate (Pomerium)",
       snippet:
         "allow plan_*, estimate_*, list_*\napply_*/destroy_* → guardian only\nbudget_cap: $500/mo",
     });
@@ -425,6 +442,11 @@ export function createApp(opts?: {
     } catch (err) {
       res.status(400).json({ ok: false, error: (err as Error).message });
     }
+  });
+
+  /** PPL policy viewer for Audit Log "View policy" links. */
+  app.get("/admin/policy", (_req, res) => {
+    res.sendFile(path.join(DASHBOARD_DIR, "policy.html"));
   });
 
   app.use(express.static(DASHBOARD_DIR));

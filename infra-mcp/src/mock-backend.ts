@@ -205,6 +205,9 @@ export class MockBackend {
       severity: "info",
       actor,
       kind: "timeline",
+      action: "budget fetch",
+      resource: proposalId,
+      result: "OK",
       extra: { budgetSource, proposalId },
     });
     this.events.appendTimeline({
@@ -214,6 +217,9 @@ export class MockBackend {
       severity: "info",
       actor,
       kind: "timeline",
+      action: "pricing",
+      resource: `${proposal.spec.name} · $${proposal.estimate.usdPerMonth}/mo`,
+      result: "OK",
       extra: { pricingSource, proposalId, usdPerMonth: proposal.estimate.usdPerMonth },
     });
 
@@ -227,6 +233,10 @@ export class MockBackend {
           sponsor: "guardian",
           title: "APPROVE",
           severity: "allow",
+          action: "approve",
+          resource: `${proposal.spec.name} (${proposalId})`,
+          result: "ALLOW",
+          sponsors: ["guardian", "nexla", "zero"],
         }
       );
       this.events.append("chat", actor, reason, {
@@ -245,6 +255,10 @@ export class MockBackend {
           sponsor: "guardian",
           title: "REJECT",
           severity: "block",
+          action: "reject",
+          resource: `${proposal.spec.name} (${proposalId})`,
+          result: "REJECTED",
+          sponsors: ["guardian", "nexla", "zero"],
         }
       );
       this.events.append("chat", actor, reason, {
@@ -348,6 +362,8 @@ export class MockBackend {
       `Applied ${deployment.name} → ${deployment.liveUrl} ($${deployment.usdPerMonth}/mo)`,
       {
         deployment,
+        liveUrl: deployment.liveUrl,
+        akashLeaseId: deployment.akashLeaseId,
         leaseProvider: this.leases.kind,
         sponsor: "akash",
         title:
@@ -355,6 +371,10 @@ export class MockBackend {
             ? "Lease create (dry-run)"
             : "Lease create",
         severity: gateOff ? "warn" : "allow",
+        action: gateOff ? "apply ALLOW (gate off)" : "apply ALLOW",
+        resource: `${deployment.name} (${deployment.id})`,
+        result: gateOff ? "WARN" : "ALLOW",
+        sponsors: ["akash", "pomerium"],
       }
     );
     this.events.append("allow", actor, `apply_deployment ALLOW`, {
@@ -364,6 +384,9 @@ export class MockBackend {
       sponsor: "pomerium",
       title: "apply_deployment ALLOW",
       severity: "allow",
+      action: "apply ALLOW",
+      resource: deployment.id,
+      result: "ALLOW",
     });
     if (gateOff) {
       this.events.append(
@@ -393,10 +416,16 @@ export class MockBackend {
       {
         deploymentId,
         name: dep.name,
+        akashLeaseId: dep.akashLeaseId,
+        liveUrl: dep.liveUrl,
         leaseProvider: this.leases.kind,
         sponsor: "akash",
         title: "Lease destroy",
         severity: "warn",
+        action: "destroy",
+        resource: `${dep.name} (${deploymentId})`,
+        result: "DESTROYED",
+        sponsors: ["akash", "guardian"],
       }
     );
     this.events.append("allow", actor, `destroy_deployment ALLOW`, {
@@ -504,11 +533,17 @@ export class MockBackend {
       `Applied ${deployment.name} → ${deployment.liveUrl} ($${deployment.usdPerMonth}/mo)`,
       {
         deployment,
+        liveUrl: deployment.liveUrl,
+        akashLeaseId: deployment.akashLeaseId,
         leaseProvider: this.leases.kind,
         demo: "disaster",
         sponsor: "akash",
         title: "Lease create — 8×A100",
         severity: "block",
+        action: "apply ALLOW (gate off)",
+        resource: `${deployment.name} (${deployment.id})`,
+        result: "WARN",
+        sponsors: ["akash", "guardian"],
       }
     );
     this.events.append(

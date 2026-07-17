@@ -97,6 +97,10 @@ export function createShim(opts?: {
         sponsor: "pomerium",
         title: "Quarantine policy rewrite",
         severity: "block",
+        action: "quarantine",
+        resource: result.entry.email,
+        result: "BLOCKED",
+        sponsors: ["pomerium", "guardian"],
         detail: {
           tool: "quarantine",
           entry: result.entry,
@@ -112,6 +116,9 @@ export function createShim(opts?: {
         sponsor: "guardian",
         title: "Identity quarantined",
         severity: "block",
+        action: "quarantine",
+        resource: result.entry.email,
+        result: "BLOCKED",
         detail: { entry: result.entry },
       });
       res.json({
@@ -170,6 +177,9 @@ export function createShim(opts?: {
           sponsor: "pomerium",
           title: `${tool} BLOCKED`,
           severity: "block",
+          action: "apply BLOCKED",
+          resource: tool,
+          result: "BLOCKED",
           detail: {
             tool,
             code: decision.code,
@@ -182,6 +192,9 @@ export function createShim(opts?: {
             kind: "apply_denied",
             actor,
             message: `Pomerium denied ${tool} for non-guardian identity`,
+            action: "apply BLOCKED",
+            resource: tool,
+            result: "BLOCKED",
             detail: { tool, code: decision.code },
           });
         }
@@ -193,6 +206,9 @@ export function createShim(opts?: {
             sponsor: "pomerium",
             title: "Quarantined identity 403",
             severity: "block",
+            action: "quarantine",
+            resource: decision.identity?.email ?? actor,
+            result: "BLOCKED",
             detail: { tool },
           });
         }
@@ -332,6 +348,11 @@ async function emitAudit(
     sponsor?: string;
     title?: string;
     severity?: string;
+    action?: string;
+    resource?: string;
+    result?: string;
+    sponsors?: string[];
+    links?: { label: string; url: string }[];
   }
 ): Promise<void> {
   try {

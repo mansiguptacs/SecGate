@@ -21,6 +21,53 @@ const GUARDIAN_TOKEN =
   process.env.SECGATE_GUARDIAN_TOKEN || "guardian-agent-token-PHASE2";
 const DRIVER = path.join(ROOT, "agents", "ticket-driver.js");
 
+/** Demo-facing console URLs (override via env). */
+const LINKS = {
+  akash: process.env.AKASH_CONSOLE_URL || "https://console.akash.network",
+  nexla:
+    process.env.NEXLA_CONSOLE_URL ||
+    (process.env.NEXLA_MCP_URL && process.env.NEXLA_MCP_URL.includes("nexla")
+      ? "https://dataops.nexla.io"
+      : "https://dataops.nexla.io"),
+  zero: process.env.ZERO_CONSOLE_URL || "https://www.zero.xyz",
+  policy: process.env.SECGATE_POLICY_VIEW_URL || `${MCP}/admin/policy`,
+  tower: `${MCP}/`,
+};
+
+function sponsorLinks(...sponsors) {
+  const out = [];
+  const seen = new Set();
+  for (const s of sponsors) {
+    let label;
+    let url;
+    if (s === "akash") {
+      label = "Akash console";
+      url = LINKS.akash;
+    } else if (s === "nexla") {
+      label = "Nexla budget tool";
+      url = LINKS.nexla;
+    } else if (s === "zero") {
+      label = "Zero.xyz";
+      url = LINKS.zero;
+    } else if (s === "pomerium") {
+      label = "View policy";
+      url = LINKS.policy;
+    } else if (s === "guardian") {
+      label = "Control Tower";
+      url = LINKS.tower;
+    } else continue;
+    const key = `${label}|${url}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ label, url });
+  }
+  return out;
+}
+
+async function audit(payload) {
+  return mcp("POST", "/events/audit", payload);
+}
+
 const SCENES = [
   {
     id: 0,
@@ -116,16 +163,45 @@ async function scene0(dry) {
   }
   await mcp("POST", "/admin/reset");
   await clearQuarantine();
-  await mcp("POST", "/events/audit", {
+  await audit({
     kind: "timeline",
-    actor: "secgate",
+    actor: "system",
     message: "Scene 0 — AgentFence OFF cold open",
     sponsor: "guardian",
     title: "SCENE 0 · Disaster",
     severity: "warn",
+    action: "scene start",
+    resource: "gate=off",
+    result: "WARN",
+    sponsors: ["guardian", "akash"],
+    links: sponsorLinks("guardian", "akash"),
     detail: { scene: 0, blurb: "Gate off — nobody watching" },
   });
   const r = await mcp("POST", "/admin/demo/disaster");
+  await audit({
+    kind: "timeline",
+    actor: "dev-agent",
+    message: "Disaster apply complete — 8×A100 committed",
+    sponsor: "akash",
+    title: "Spend spike",
+    severity: "block",
+    action: "apply ALLOW (gate off)",
+    resource: r.json.deployment?.name || "load-test-warm-pool",
+    result: "WARN",
+    sponsors: ["akash"],
+    links: [
+      ...sponsorLinks("akash"),
+      ...(r.json.deployment?.liveUrl
+        ? [{ label: "Live deployment", url: r.json.deployment.liveUrl }]
+        : []),
+    ],
+    detail: {
+      scene: 0,
+      blurb: `Committed $${r.json.committedSpendUsd}/mo`,
+      deployment: r.json.deployment,
+      liveUrl: r.json.deployment?.liveUrl,
+    },
+  });
   console.log(
     `  → gate=${r.json.gate} spend=$${r.json.committedSpendUsd?.toLocaleString?.() ?? r.json.committedSpendUsd}/mo`
   );
@@ -141,18 +217,48 @@ async function scene1(dry) {
   await mcp("POST", "/admin/reset");
   await clearQuarantine();
   await mcp("POST", "/admin/gate", { mode: "on" });
-  await mcp("POST", "/events/audit", {
+  await audit({
     kind: "timeline",
-    actor: "secgate",
+    actor: "system",
     message: "Scene 1 — clean ticket happy path",
     sponsor: "guardian",
     title: "SCENE 1 · Happy path",
     severity: "info",
+    action: "scene start",
+    resource: "tickets/clean.md",
+    result: "OK",
+    sponsors: ["guardian", "pomerium", "nexla", "zero", "akash"],
+    links: sponsorLinks("pomerium", "nexla", "zero", "akash", "guardian"),
     detail: { scene: 1, blurb: "plan → budget → price → approve → deploy" },
   });
   await runDriver("clean", ["--wait-ms", "3000"]);
   const state = await mcp("GET", "/state");
   const deps = (state.json.deployments || []).filter((d) => d.status === "running");
+  if (deps[0]) {
+    await audit({
+      kind: "timeline",
+      actor: "guardian",
+      message: `Happy-path deploy live: ${deps[0].liveUrl}`,
+      sponsor: "akash",
+      title: "Deployed",
+      severity: "allow",
+      action: "apply ALLOW",
+      resource: `${deps[0].name} (${deps[0].id})`,
+      result: "ALLOW",
+      sponsors: ["akash", "guardian"],
+      links: [
+        { label: "Live deployment", url: deps[0].liveUrl },
+        ...sponsorLinks("akash", "nexla", "zero", "pomerium"),
+      ],
+      detail: {
+        scene: 1,
+        blurb: `$${deps[0].usdPerMonth}/mo · click Live deployment`,
+        deployment: deps[0],
+        liveUrl: deps[0].liveUrl,
+        akashLeaseId: deps[0].akashLeaseId,
+      },
+    });
+  }
   console.log(
     `  → running=${deps.length} spend=$${state.json.committedSpendUsd} url=${deps[0]?.liveUrl || "(pending)"}`
   );
@@ -168,13 +274,18 @@ async function scene2(dry) {
   // Keep any happy-path deploy; just ensure gate on + identity not quarantined yet
   await mcp("POST", "/admin/gate", { mode: "on" });
   await clearQuarantine();
-  await mcp("POST", "/events/audit", {
+  await audit({
     kind: "timeline",
-    actor: "secgate",
+    actor: "system",
     message: "Scene 2 — poisoned ticket attack replay",
     sponsor: "guardian",
     title: "SCENE 2 · Attack",
     severity: "warn",
+    action: "scene start",
+    resource: "tickets/poisoned.md",
+    result: "WARN",
+    sponsors: ["guardian", "pomerium", "nexla", "zero"],
+    links: sponsorLinks("pomerium", "nexla", "zero", "guardian"),
     detail: { scene: 2, blurb: "reject → 403×3 → quarantine" },
   });
   try {
@@ -186,6 +297,22 @@ async function scene2(dry) {
   await sleep(2000); // let abuse tracker quarantine
   const policy = await fetch(`${GATEWAY}/policy`).then((r) => r.json()).catch(() => null);
   const q = policy?.policy?.quarantine?.identities ?? [];
+  await audit({
+    kind: "timeline",
+    actor: "guardian",
+    message: q.length
+      ? `Quarantine active: ${q.map((i) => i.email || i.id).join(", ")}`
+      : "Attack trail complete — check Audit Log for REJECT / BLOCKED",
+    sponsor: "pomerium",
+    title: "Attack trail",
+    severity: "block",
+    action: "quarantine",
+    resource: q[0]?.email || "dev-agent",
+    result: "BLOCKED",
+    sponsors: ["pomerium", "guardian"],
+    links: sponsorLinks("pomerium", "guardian"),
+    detail: { scene: 2, blurb: "View policy → quarantine deny rules", quarantine: q },
+  });
   console.log(`  → quarantine identities: ${q.map((i) => i.email || i.id).join(", ") || "(none yet — wait ~2s)"}`);
   return { ok: true, quarantine: q };
 }
@@ -198,13 +325,18 @@ async function scene3(dry) {
   }
   const before = await mcp("GET", "/state");
   const spendBefore = before.json.committedSpendUsd ?? 0;
-  await mcp("POST", "/events/audit", {
+  await audit({
     kind: "timeline",
-    actor: "secgate",
+    actor: "system",
     message: "Scene 3 — orphan sweep",
     sponsor: "guardian",
     title: "SCENE 3 · Orphan sweep",
     severity: "info",
+    action: "scene start",
+    resource: "dep-orphan",
+    result: "OK",
+    sponsors: ["guardian", "akash"],
+    links: sponsorLinks("akash", "guardian"),
     detail: { scene: 3, blurb: "seed idle lease → guardian destroy" },
   });
   const seeded = await mcp("POST", "/admin/demo/orphan", {
@@ -223,6 +355,23 @@ async function scene3(dry) {
       (d) => d.id === "dep-orphan" && d.status === "running"
     );
     if (orphanGone) {
+      await audit({
+        kind: "timeline",
+        actor: "guardian",
+        message: "Orphan destroyed — spend dropped",
+        sponsor: "akash",
+        title: "Orphan cleanup",
+        severity: "allow",
+        action: "destroy",
+        resource: "dep-orphan",
+        result: "DESTROYED",
+        sponsors: ["akash", "guardian"],
+        links: sponsorLinks("akash", "guardian"),
+        detail: {
+          scene: 3,
+          blurb: `Spend now $${state.json.committedSpendUsd}`,
+        },
+      });
       console.log(
         `  → orphan destroyed; spend now $${state.json.committedSpendUsd} (was $${seeded.json.committedSpendUsd})`
       );
@@ -249,52 +398,67 @@ async function scene4(dry) {
   └─────────────────────────────────────────────────────────┘
 `);
   if (dry) return { ok: true, dry: true };
-  // Dense sponsor callouts on the Control Tower timeline
+  // Dense sponsor callouts on the Control Tower timeline + audit log
   const beats = [
     {
       sponsor: "pomerium",
       title: "Enforcement layer",
       detail: "Identity + per-tool PPL + audit stream",
       severity: "info",
+      action: "policy",
+      links: sponsorLinks("pomerium"),
     },
     {
       sponsor: "akash",
       title: "Governed infra",
       detail: "Leases / live URL under guardian apply",
       severity: "info",
+      action: "apply ALLOW",
+      links: sponsorLinks("akash"),
     },
     {
       sponsor: "zero",
       title: "Runtime pricing",
       detail: "Zero.xyz discovery for cost projection",
       severity: "info",
+      action: "pricing",
+      links: sponsorLinks("zero"),
     },
     {
       sponsor: "nexla",
       title: "Budget context",
       detail: "Team budget / spend / inventory",
       severity: "info",
+      action: "budget fetch",
+      links: sponsorLinks("nexla"),
     },
     {
       sponsor: "guardian",
       title: "Agents propose. AgentFence disposes.",
       detail: "Close — guardian loop owns mutate + quarantine",
       severity: "allow",
+      action: "approve",
+      links: sponsorLinks("guardian", "pomerium", "akash", "zero", "nexla"),
     },
   ];
   for (const beat of beats) {
-    await mcp("POST", "/events/audit", {
+    await audit({
       kind: "timeline",
-      actor: "secgate",
+      actor: "system",
       message: beat.detail,
       sponsor: beat.sponsor,
       title: beat.title,
       severity: beat.severity,
+      action: beat.action,
+      resource: beat.sponsor,
+      result: "OK",
+      sponsors: [beat.sponsor],
+      links: beat.links,
       detail: { scene: 4, blurb: beat.detail },
     });
     await sleep(350);
   }
-  console.log("  → timeline sponsor beats emitted");
+  console.log("  → timeline + audit sponsor beats emitted");
   console.log("  (paused — press next when narration done)");
   return { ok: true };
 }

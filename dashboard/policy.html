@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentFence · Policy viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1210;
+      --line: #2a3f36;
+      --text: #e6f2ec;
+      --muted: #8aa396;
+      --accent: #3dd68c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse 70% 40% at 50% -5%, rgba(61, 214, 140, 0.12), transparent 50%), var(--bg);
+      color: var(--text);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      padding: 1.5rem;
+    }
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.75rem;
+    }
+    h1 {
+      margin: 0;
+      font-family: "Syne", sans-serif;
+      font-size: 1.25rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    a { color: var(--accent); }
+    .muted { color: var(--muted); font-size: 0.85rem; }
+    pre {
+      margin: 0;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--line);
+      background: #101a16;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+      font-size: 0.82rem;
+    }
+    .err { color: #ff5c5c; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Pomerium policy</h1>
+      <div class="muted" id="label">Loading…</div>
+    </div>
+    <a href="/">← Control Tower</a>
+  </header>
+  <pre id="snippet">…</pre>
+  <script>
+    (async () => {
+      const label = document.getElementById("label");
+      const snippet = document.getElementById("snippet");
+      try {
+        const gateway =
+          (window.SECGATE_GATEWAY_URL) ||
+          localStorage.getItem("SECGATE_GATEWAY_URL") ||
+          "http://127.0.0.1:3200";
+        let data = null;
+        try {
+          const r = await fetch(gateway + "/policy");
+          if (r.ok) data = await r.json();
+        } catch (_) { /* fall through to MCP */ }
+        if (!data) {
+          const r = await fetch("/policy");
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          data = await r.json();
+        }
+        label.textContent = data.label || "Pomerium PPL";
+        snippet.textContent =
+          data.snippet ||
+          (data.policy ? JSON.stringify(data.policy, null, 2) : "(empty)");
+      } catch (err) {
+        label.className = "muted err";
+        label.textContent = "Failed to load policy";
+        snippet.textContent = String(err.message || err);
+      }
+    })();
+  </script>
+</body>
+</html>
