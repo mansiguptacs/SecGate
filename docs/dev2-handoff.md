@@ -7,7 +7,7 @@ Laptop A connects through the **Pomerium policy shim** (identity-aware gateway) 
 | Item | Status | Value |
 |------|--------|-------|
 | Gateway base URL (local) | **Ready** | `http://<Laptop-B-LAN-IP>:3200` or tunnel URL below |
-| Public tunnel URL | **LIVE** | `https://hottest-cookies-advisors-loans.trycloudflare.com` |
+| Public tunnel URL | **LIVE** | `https://kyle-leader-lightning-radio.trycloudflare.com` |
 | MCP transport | Ready | HTTP JSON tool routes (streamable-HTTP when real Pomerium MCP lands) |
 | Dev identity | Ready | `dev@secgate.local` |
 | **Dev bearer token** | Ready | `dev-agent-token-PHASE2` |
@@ -31,7 +31,7 @@ Authorization: Bearer guardian-agent-token-PHASE2 # guardian only (do NOT put on
 
 | Endpoint | URL | Who uses it |
 |----------|-----|-------------|
-| **Gateway (MCP)** `:3200` | `https://hottest-cookies-advisors-loans.trycloudflare.com` | **Laptop A** — Cursor MCP |
+| **Gateway (MCP)** `:3200` | `https://kyle-leader-lightning-radio.trycloudflare.com` | **Laptop A** — Cursor MCP |
 | Control Tower / budget `:3100` | `https://region-cancelled-suites-phpbb.trycloudflare.com` | Optional remote budget/dashboard |
 | Control Tower (local) | `http://localhost:3100/` | **Laptop B** operator |
 
