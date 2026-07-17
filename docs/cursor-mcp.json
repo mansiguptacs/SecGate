@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "secgate": {
+      "url": "REPLACE_WITH_TUNNEL_URL",
+      "transport": "streamable-http",
+      "headers": {
+        "Authorization": "Bearer dev-agent-token-PHASE2"
+      }
+    }
+  }
+}
