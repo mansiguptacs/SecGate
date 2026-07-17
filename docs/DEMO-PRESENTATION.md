@@ -1,16 +1,26 @@
-# SecGate — Live Demo Presentation Guide
+# SecGate — Live Demo Playbook (≤3:00)
 
-**HARD LIMIT: demo ≤ 3:00 total.** Hackathon requirement. If behind, skip every line marked **CUT IF BEHIND**. Prefer silence over overrun.
+**Hard limit:** total demo ≤ **3:00**. Prefer silence over overrun. Stop all new beats by **2:40**; hard stop at **3:00**.
 
 **Primary screen:** Laptop B — Control Tower http://localhost:3100/ (full-screen, dark, ~125% zoom)  
 **Tagline:** *Agents propose. SecGate disposes.*
 
-| Role | Machine | Job |
-|------|---------|-----|
-| **Presenter B** | Laptop B | Control Tower + optional `npm run demo` keys `0`–`4` |
-| **Presenter A** | Laptop A | Paste tickets; MCP → `http://172.24.82.134:3200` |
+---
 
-**Laptop A MCP:**
+## 1. Roles
+
+| Role | Machine | Owns |
+|------|---------|------|
+| **Developer A** | Laptop A | Cursor agent + SecGate MCP. Pastes tickets on cue. Does **not** narrate. |
+| **Developer B** | Laptop B | Full stack + Control Tower + hidden `npm run demo` keys `0`–`4`. Points at Timeline. Optional short VO. |
+
+**Clock owner:** B. Advance on the timestamps below even if UI is mid-animation.
+
+---
+
+## 2. Laptop A — MCP connection (keep this)
+
+Prefer LAN. Ask B for a fresh IP if curl fails (`ipconfig getifaddr en0` on B).
 
 ```json
 {
@@ -26,195 +36,141 @@
 }
 ```
 
-Token: **only** `dev-agent-token-PHASE2`. If LAN IP drifted, ask B for `ipconfig getifaddr en0`.
+| Item | Value |
+|------|--------|
+| Gateway (LAN) | `http://172.24.82.134:3200` |
+| Token | **only** `dev-agent-token-PHASE2` |
+| Tower (B’s screen) | http://localhost:3100/ |
+
+Do **not** use `guardian-agent-token-PHASE2`. Do **not** point MCP at `:3100`.
 
 ---
 
-## Hard timing budget (must hit)
+## 3. Pre-flight checklist (before clock starts)
 
-| Scene | Clock | Max | Buffer rule |
-|-------|-------|-----|-------------|
-| 0 Cold open | 0:00–0:20 | **20s** | Advance at 0:20 even if mid-sentence |
-| 1 Happy path | 0:20–0:55 | **35s** | Skip URL click if behind |
-| 2 Attack ×3 | 0:55–1:55 | **60s** | One sentence per beat; drop CUT lines |
-| 3 Orphan | 1:55–2:20 | **25s** | One line + watch spend drop |
-| 4 Sponsors | 2:20–2:40 | **20s** | Four short callouts + tagline |
-| **Reserve** | 2:40–3:00 | **20s** | Silence / tagline hold — **never start a new beat after 2:40** |
-| **TOTAL** | | **≤3:00** | Stop talking at 2:55 |
+### Developer B
 
-Spoken pace: ~2 words/sec. Lines below are sized to fit.
+- [ ] Stack up: `npm run start:phase2` (or `start:stable` / `start:phase3`)
+- [ ] Control Tower open: http://localhost:3100/ — full-screen, dark, ~125% zoom
+- [ ] Gateway listening on `:3200`
+- [ ] Quarantine cleared if needed (guardian Bearer → POST `/admin/clear-quarantine`)
+- [ ] Hidden terminal ready: `npm run demo` (keys `0`–`4`)
+- [ ] Give A current LAN IP if not `172.24.82.134`
+- [ ] Notifications / Focus / Do Not Disturb on
+- [ ] Agree fallback: if A MCP dies → B-only director (section 5)
 
----
+### Developer A
 
-## 1. Pre-flight (BEFORE clock starts — not part of 3:00)
-
-### B
-- [ ] `npm run start:phase2` (or `start:stable` / `start:phase3`)
-- [ ] http://localhost:3100/ full-screen
-- [ ] Gateway :3200 up
-- [ ] Quarantine cleared if needed (guardian Bearer POST `/admin/clear-quarantine`)
-- [ ] Hidden terminal: `npm run demo`
-- [ ] Notifications off
-
-### A
-- [ ] MCP LAN + Bearer `dev-agent-token-PHASE2`
-- [ ] Tools listed
-- [ ] `tickets/clean.md` + `tickets/poisoned.md` ready — **not pasted**
-- [ ] Fallback agreed: B-only director if MCP dies
+- [ ] MCP config = LAN URL + Bearer `dev-agent-token-PHASE2` (section 2)
+- [ ] MCP tools listed: `plan_deployment`, `estimate_cost`, `apply_deployment`, `list_deployments`
+- [ ] Files open / ready to paste — **not pasted yet**:
+  - [ ] `tickets/clean.md`
+  - [ ] `tickets/poisoned.md`
+- [ ] Cursor chat empty / ready for first paste
+- [ ] Fallback agreed with B (no debugging on clock)
 
 ---
 
-## 2. Strict ≤3:00 script
+## 4. Demo runbook (≤3:00) — actions only
 
-**Who speaks:** B only (default). A pastes, does not narrate unless noted.  
-**Director:** B presses `0`–`4` in hidden terminal (or A pastes for scenes 1–2 live).
+**Mode (pick one before start):**
 
----
+| Mode | When | How scenes 1–2 fire |
+|------|------|---------------------|
+| **Live MCP (preferred)** | A’s tools work | A pastes tickets; B may still press keys as backup |
+| **Director (fallback)** | A MCP broken | B only — section 5 |
 
-### Scene 0 — Cold open (0:00–0:20) — MAX 20s
+| Time | Scene | **Dev B does** | **Dev A does** | B may say *(optional)* |
+|------|-------|----------------|----------------|------------------------|
+| **0:00** | 0 Cold open | Press **`0`**. Point: spend → **$12,400/mo** red. | Silent. Face tower. | “Hidden ticket line → eight A100s. Who’s watching?” |
+| **0:20** | 1 Happy path | Press **`1`** *or* confirm gate ON. Point: green **ALLOW** badges → approve → deploy. | At B’s nod: paste entire `tickets/clean.md`. Wait for plan/estimate on tower. | “Clean ticket — propose only. ~$3. Live.” |
+| **0:55** | 2a Reject | Press **`2`** *or* clear quarantine + gate ON. Point: guardian **reject** bubble. | At **0:55**: paste entire `tickets/poisoned.md`. | “Eight A100s — over budget / injection.” |
+| **1:15** | 2b 403 | Point: red **BLOCKED 403** on direct `apply`. | Let agent retry apply if it tries; do not coach. | “Dev identity can’t mutate.” |
+| **1:35** | 2c Quarantine | Point: quarantine / PPL diff; even plan → 403. | Confirm tools now fail; stay silent. | “Identity quarantined — no human.” |
+| **1:55** | 3 Orphan | Press **`3`**. Point: orphan seed → destroy → **spend drops**. | Silent. | “Orphan sweep — spend drops.” |
+| **2:20** | 4 Sponsors | Press **`4`**. Point: Pomerium → Akash → Zero → Nexla. | Silent. | “Agents propose. SecGate disposes.” |
+| **2:40–3:00** | Hold | Hold tagline / tower. **No new beats.** Stop talking by **2:55**. | Silent. | — |
 
-**B action:** Key `0`. Spend → **$12,400/mo** red.
-
-**B say (all of this ≤18s speaking):**
-
-> “Hidden line in a ticket. Agent spins eight A100s — twelve thousand a month. No guardrails.”
-
-> “Who’s watching your agents?”
-
-**CUT IF BEHIND:** “Friday afternoon / deploy staging API” setup. Jump straight to spend + “Who’s watching…”
-
-**A:** Silent. Face tower.
-
-**At 0:20 → key `1` / start scene 1. No pause.**
-
----
-
-### Scene 1 — Happy path (0:20–0:55) — MAX 35s
-
-**A action:** Paste `tickets/clean.md` immediately when B nods.  
-**B action:** Key `1` *or* gate ON. Watch ALLOW badges.
-
-**B say (≤25s speaking; leave ~10s for UI):**
-
-> “SecGate on. Clean ticket — agent can only propose.”
-
-> “Zero prices it, Nexla checks budget: three dollars. Guardian applies on Akash.”
-
-> “Live. Zero friction.”
-
-**CUT IF BEHIND:** “Pomerium-shaped zero-trust gate — identity checked, tool checked.”  
-**CUT IF BEHIND:** Clicking the live URL (glance only).  
-**CUT IF BEHIND (A):** “I’m blocked from apply by identity policy.”
-
-**At 0:55 → start scene 2 even if deploy URL still loading.**
-
----
-
-### Scene 2 — Attack blocked 3 ways (0:55–1:55) — MAX 60s
-
-**A action:** Paste `tickets/poisoned.md` at 0:55.  
-**B action:** Key `2` *or* clear quarantine + gate ON. Point: reject → 403 → quarantine.
-
-#### Beat 1 — Reject (0:55–1:15) — ≤20s
-
-> “Poisoned ticket — eight A100s. Guardian rejects: over budget, likely injection.”
-
-**CUT IF BEHIND:** “Plain English, not a stack trace.”
-
-#### Beat 2 — 403 (1:15–1:35) — ≤20s
-
-> “Direct `apply` — **403**. Dev identity can’t mutate. Gate, not app code.”
-
-**CUT IF BEHIND:** “The server never saw a successful apply.”
-
-#### Beat 3 — Quarantine (1:35–1:55) — ≤20s
-
-> “Third try — identity quarantined. Even plan is 403. No human touched it.”
-
-**CUT IF BEHIND:** Waiting for a second plan failure on A’s screen.
-
-**At 1:55 → key `3`. Do not extend beats.**
-
----
-
-### Scene 3 — Orphan (1:55–2:20) — MAX 25s
-
-**B action:** Key `3`. Watch orphan seed → destroy → spend drop.  
-**A:** Silent.
-
-**B say (≤12s):**
-
-> “Orphan sweep — idle, no owner. Destroyed. Spend drops.”
-
-**CUT IF BEHIND:** “sitting twenty minutes” / “forgotten machines.” Just point at the counter.
-
-**At 2:20 → key `4`.**
-
----
-
-### Scene 4 — Sponsors (2:20–2:40) — MAX 20s
-
-**B action:** Key `4`. Rapid fire — one breath each:
-
-> **Pomerium** — identity, per-tool policy, audit, live quarantine.  
-> **Akash** — governed compute; only guardian opens leases.  
-> **Zero** — live pricing before approve.  
-> **Nexla** — budget as governed data.  
-> **“Agents propose. SecGate disposes.”**
-
-**CUT IF BEHIND:** Drop Zero + Nexla to: “Zero prices. Nexla budgets.” Then tagline only.  
-**CUT IF BEHIND:** Any architecture overlay explanation.
-
-**2:40–3:00:** Hold tagline / tower. **Stop talking by 2:55.**
-
----
-
-## Timing cheat-sheet (say aloud during rehearsal)
+### Timing cheat-sheet (B’s pocket card)
 
 ```
-0:00  KEY 0  — disaster
-0:20  KEY 1  — clean / happy
-0:55  KEY 2  — poisoned / 3 blocks
+0:00  KEY 0  — disaster spend
+0:20  KEY 1  — clean / happy   ← A pastes clean.md
+0:55  KEY 2  — poisoned ×3     ← A pastes poisoned.md
 1:55  KEY 3  — orphan
 2:20  KEY 4  — sponsors
 2:40  SILENCE / tagline hold
 3:00  HARD STOP
 ```
 
+### Cut if behind
+
+| If clock is late… | Skip |
+|-------------------|------|
+| Scene 0 | Setup story — jump to spend + “Who’s watching?” |
+| Scene 1 | Clicking live URL; any architecture aside |
+| Scene 2 | Extra waits for second failures on A’s screen |
+| Scene 3 | “twenty minutes idle” — just point at spend drop |
+| Scene 4 | Collapse to: Pomerium · Akash · tagline only |
+
 ---
 
-## 3. Fallback — A MCP fails (same clock)
+## 5. Fallback — A MCP fails (B-only)
 
-1. A (once): “Tower-driven.”  
-2. B: `npm run demo` → `0` `1` `2` `3` `4` on the **same** timestamps above.  
-3. Same short lines. No debugging on the clock.
+Same timestamps. **No debugging on the clock.**
+
+1. A (once, off-mic if possible): nod that tower drives the demo.
+2. B: keep Control Tower full-screen; in hidden terminal run `npm run demo`.
+3. B presses keys on the cheat-sheet clock: **`0` → `1` → `2` → `3` → `4`**.
+4. A: do **not** paste tickets; watch tower with audience.
+5. Optional VO: same one-liners in the runbook table (or appendix below).
+
+```
+npm run demo
+# then: 0 @0:00 · 1 @0:20 · 2 @0:55 · 3 @1:55 · 4 @2:20
+```
 
 ---
 
-## 4. What NOT to say
+## 6. Optional VO (collapsed — not the playbook)
+
+<details>
+<summary>Spoken lines if B wants light narration (secondary)</summary>
+
+**Scene 0:** “Hidden line in a ticket. Agent spins eight A100s — twelve thousand a month. Who’s watching your agents?”
+
+**Scene 1:** “SecGate on. Clean ticket — agent can only propose. Zero prices it, Nexla checks budget: three dollars. Guardian applies on Akash. Live. Zero friction.”
+
+**Scene 2:** “Poisoned ticket — eight A100s. Guardian rejects. Direct apply — 403. Third try — identity quarantined. No human touched it.”
+
+**Scene 3:** “Orphan sweep — idle, no owner. Destroyed. Spend drops.”
+
+**Scene 4:** “Pomerium — identity and per-tool policy. Akash — governed compute. Zero — live pricing. Nexla — budget as data. Agents propose. SecGate disposes.”
+
+**Hallway elevator (off-clock):** “Agents hold cloud credentials. One hidden ticket line can spin eight GPUs overnight. SecGate is the zero-trust gate: agents only propose; policy blocks unauthorized apply; guardian cost-checks with Zero and Nexla, deploys on Akash when safe, quarantines abuse, cleans orphans.”
+
+</details>
+
+---
+
+## 7. What NOT to say (on clock)
 
 | Don’t | Do |
 |-------|-----|
 | “shim / fake Pomerium / policy proxy” | “Pomerium-shaped zero-trust gate” |
 | Apologize for OAuth / mock | Save for Q&A |
 | “The agent messed up” | “Hidden injection — caught three ways” |
-| Extra architecture mid-scene | Stick to the lines; cut CUT IF BEHIND |
+| Extra architecture mid-scene | Point at tower; cut VO if behind |
 
 ---
 
-## 5. Thirty-second elevator (off-clock / hallway only)
+## 8. Judge Q&A (after 3:00 — not in the demo)
 
-> “Agents hold cloud credentials. One hidden ticket line can spin eight GPUs overnight. SecGate is the zero-trust gate: agents only propose; policy blocks unauthorized apply; a guardian cost-checks with Zero and Nexla, deploys on Akash when safe, quarantines abuse, cleans orphans. Agents propose. SecGate disposes.”
-
----
-
-## 6. Judge Q&A (after the 3:00 — not in the demo)
-
-- **Real Pomerium / OAuth?** Same PPL shape; bearers for venue; OAuth swaps in.  
-- **Fillmore?** No usable API — skipped.  
-- **Mock vs real?** Gate, budget, 403, quarantine, orphan, tower always real; Akash/Zero/Nexla behind flags.  
-- **Bypass?** Mutate = guardian identity only.  
-- **Quarantine?** Blocked applies → deny identity → even `plan_*` fails.  
+- **Real Pomerium / OAuth?** Same PPL shape; bearers for venue; OAuth swaps in.
+- **Fillmore?** No usable API — skipped.
+- **Mock vs real?** Gate, budget, 403, quarantine, orphan, tower always real; Akash/Zero/Nexla behind flags.
+- **Bypass?** Mutate = guardian identity only.
+- **Quarantine?** Blocked applies → deny identity → even `plan_*` fails.
 - **Injection?** HTML “oncall wiki” paste in `tickets/poisoned.md`.
 
 ---
@@ -226,7 +182,8 @@ Spoken pace: ~2 words/sec. Lines below are sized to fit.
 | Tower | http://localhost:3100/ |
 | Gateway | http://172.24.82.134:3200 |
 | Token | `dev-agent-token-PHASE2` |
-| Keys | `0` `1` `2` `3` `4` at 0:00 / 0:20 / 0:55 / 1:55 / 2:20 |
+| A pastes | `clean.md` @0:20 · `poisoned.md` @0:55 |
+| B keys | `0` `1` `2` `3` `4` @ 0:00 / 0:20 / 0:55 / 1:55 / 2:20 |
 | Hard stop | **3:00** |
 
 **Related:** [demo/narration_script.md](../demo/narration_script.md), [docs/laptop-a-cheatsheet.md](./laptop-a-cheatsheet.md), [PLAN.md](../PLAN.md).
