@@ -57,38 +57,31 @@ ZERO_FORCE_OFF=1             # force table fallback (offline demo)
 
 ### Steps
 
-- [ ] Sign up at **https://nexla.com** / visit sponsor booth
-- [ ] Create a ToolSet backed by this budget table:
+Dev 1 has created a full SOP/playbook for Nexla MCP Studio:
+**[`docs/nexla/SecGate-Budget-Governance-SOP.md`](./nexla/SecGate-Budget-Governance-SOP.md)**
+(PDF version also available at `docs/nexla/SecGate-Budget-Governance-SOP.pdf`)
 
-```
-team               | monthly_budget_usd | spent_usd
--------------------|--------------------|----------
-platform-eng       | 500                | 47
-```
-
-- [ ] Expose as MCP server with tool name **`get_team_budget`** returning:
-
-```json
-{
-  "team": "platform-eng",
-  "monthly_budget_usd": 500,
-  "spent_usd": 47
-}
-```
-
-- [ ] Get MCP URL and service key
+- [ ] Sign up at **https://nexla.com** / visit sponsor booth → sign in to MCP Studio
+- [ ] Upload the SOP PDF: **`docs/nexla/SecGate-Budget-Governance-SOP.pdf`**
+- [ ] In MCP Studio: ToolSet name = `SecGate-Budget-Governance`
+- [ ] Seed one data row: `platform-eng` / `500` / `47`
+- [ ] Verify tools generated: `get_team_budget` (required), `list_team_budgets` (recommended)
+- [ ] Export as MCP → copy URL shaped like `https://api-genai.nexla.io/mcp/service_key/<server_key>`
+- [ ] Copy org Service Key (Bearer auth)
 
 ### Hand to Dev 1
 
 ```bash
+NEXLA_USE_SHIM=0
 NEXLA_MCP_URL=https://api-genai.nexla.io/mcp/service_key/<server_key>
 NEXLA_SERVICE_KEY=nxl_sk_....
+NEXLA_BUDGET_TOOL=get_team_budget
+NEXLA_TEAM=platform-eng
 ```
 
 ### If Nexla onboarding stalls past 3:00 PM
 
-Tell Dev 1 to **keep the local JSON fallback** (`data/budget.json` — already set to `spent_usd: 47`).  
-Take a screenshot of the Nexla config for the demo video close / Devpost instead.
+**No action needed from Dev 1** — the local Nexla shim starts automatically with `npm run start:phase2` (`NEXLA_USE_SHIM=1`). The Control Tower will already show the **Nexla** badge. Take a screenshot of the Nexla MCP Studio config for the Devpost writeup instead.
 
 ---
 
@@ -105,18 +98,30 @@ Take a screenshot of the Nexla config for the demo video close / Devpost instead
 
 ---
 
-## 5. What Dev 2 Does While Waiting for Tunnel URL (now → 2:15 PM)
+## 5. Dev 2 Task Status
 
-- [x] `tickets/clean.md` — written
-- [x] `tickets/poisoned.md` — written
-- [x] `demo/narration_script.md` — written, matches scene 0–4 keys
-- [x] `demo/devpost_submission.md` — written
-- [x] `demo/recording_setup.md` — written with exact curl smoke tests
-- [x] `data/budget.json` — set `spent_usd: 47` for demo realism
-- [ ] Akash Console account + credits (sponsor booth)
-- [ ] Zero.xyz: auth on Laptop B (coordinate with Dev 1)
-- [ ] Nexla: ToolSet + MCP URL
-- [ ] Configure Cursor MCP server (after 2:15 PM sync)
+### ✅ Done
+- [x] `tickets/clean.md` — clean staging API ticket
+- [x] `tickets/poisoned.md` — poisoned ticket with buried A100 injection
+- [x] `demo/narration_script.md` — 3-min VO, scenes 0–4, exact tool names
+- [x] `demo/devpost_submission.md` — full Devpost entry, all sponsor writeups
+- [x] `demo/recording_setup.md` — OBS config, MCP setup, smoke test curls
+- [x] `data/budget.json` — `spent_usd: 47` for demo realism
+- [x] `docs/cursor-mcp.json` — MCP config stub (fill tunnel URL at 2:15)
+- [x] `docs/sponsor-onboarding.md` — this doc
+- [x] Build verified: all packages compile clean
+- [x] Tests: 36/36 pass (phases 1–4)
+- [x] Demo director dry-run: all 5 scenes wired correctly
+
+### 🔲 Pending (physical / time-gated)
+- [ ] Akash Console account + credits — sponsor booth
+- [ ] Zero.xyz auth on Laptop B — coordinate with Dev 1
+- [ ] Nexla MCP Studio upload — sponsor booth (SOP PDF ready)
+- [ ] Get tunnel URL from Dev 1 at 2:15 PM sync
+- [ ] Plug tunnel URL into `docs/cursor-mcp.json` → configure Cursor
 - [ ] Smoke test: `plan_deployment` → 200, `apply_deployment` → 403
-- [ ] Record demo video (3:50 PM)
-- [ ] Submit Devpost (4:20 PM)
+- [ ] Hand `AKASH_API_KEY` to Dev 1 by 2:45 PM
+- [ ] Hand Nexla MCP URL+key to Dev 1 by 3:00 PM
+- [ ] Full rehearsal at 3:30 PM
+- [ ] Record demo video at 3:50 PM
+- [ ] Submit Devpost by 4:20 PM
