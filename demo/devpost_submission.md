@@ -1,18 +1,18 @@
-# SecGate — Devpost Submission
+# AgentFence — Devpost Submission
 
 ## Project Name
 
-**SecGate**
+**AgentFence**
 
 ## Tagline
 
-*Agents propose. SecGate disposes.*
+*Agents propose. AgentFence disposes.*
 
 ---
 
 ## What It Does
 
-Developers now let AI agents create and destroy cloud infrastructure. SecGate is the gate those agents must pass through.
+Developers now let AI agents create and destroy cloud infrastructure. AgentFence is the gate those agents must pass through.
 
 Every infra change an agent proposes is **identity-checked** by Pomerium, **cost-estimated** against live pricing (Zero.xyz) and team budgets (Nexla), and **policy-approved** before it happens. Only the guardian's identity may execute a deployment — enforced by Pomerium's per-tool policy, not application code, so there is no application-layer bypass.
 
@@ -26,7 +26,7 @@ The result: AI agents can handle normal infra work at full speed, and the expens
 
 Modern coding agents have cloud credentials. They act on ticket queues autonomously. A single line of prompt injection in a ticket can cause an agent to provision expensive GPU instances and leave them running. Existing solutions (IAM roles, manual review) assume a human is in the loop — but autonomous agents bypass exactly that.
 
-SecGate closes this gap with an enforcement layer that understands *who* is calling, *what tool* they're calling, and *what it costs* — before anything happens.
+AgentFence closes this gap with an enforcement layer that understands *who* is calling, *what tool* they're calling, and *what it costs* — before anything happens.
 
 ---
 
@@ -68,7 +68,7 @@ Guardian Agent Loop
 
 ### Pomerium
 
-SecGate uses Pomerium as its **core enforcement layer**. Our policy expresses per-tool identity rules in PPL:
+AgentFence uses Pomerium as its **core enforcement layer**. Our policy expresses per-tool identity rules in PPL:
 
 - `plan_deployment`, `estimate_cost`, `list_deployments` — allowed for any authenticated identity
 - `apply_deployment`, `destroy_deployment` — allowed **only** for the guardian identity
@@ -77,7 +77,7 @@ When the guardian detects a misbehaving agent (> 2 blocked apply attempts), it a
 
 ### Akash Network
 
-Akash is the governed compute layer. All real deployments in the demo use Akash via SDL (`infra-mcp/akash/staging-api.sdl.yml`). The happy-path scene shows a genuine Akash deployment — a `staging-api` container that receives a live URL clicked on camera. The attack scene attempts to deploy 8× A100 instances; those proposals are costed against live pricing and rejected before a lease is ever opened. This makes the "what SecGate prevents" story concrete and real.
+Akash is the governed compute layer. All real deployments in the demo use Akash via SDL (`infra-mcp/akash/staging-api.sdl.yml`). The happy-path scene shows a genuine Akash deployment — a `staging-api` container that receives a live URL clicked on camera. The attack scene attempts to deploy 8× A100 instances; those proposals are costed against live pricing and rejected before a lease is ever opened. This makes the "what AgentFence prevents" story concrete and real.
 
 ### Zero.xyz
 
@@ -113,7 +113,7 @@ The guardian queries team budget and spend data through **Nexla MCP tools**. Nex
 
 ## Repository
 
-*[https://github.com/your-org/SecGate]*
+*[https://github.com/your-org/AgentFence]*
 
 ---
 

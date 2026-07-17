@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SecGate demo-director — keypress / numbered CLI fires demo scenes.
+ * AgentFence demo-director — keypress / numbered CLI fires demo scenes.
  *
  * Usage:
  *   npm run demo              # interactive (0-4 / n / q)
@@ -26,7 +26,7 @@ const SCENES = [
     id: 0,
     title: "Cold open — disaster",
     narration:
-      "SecGate OFF. Poisoned ticket deploys 8×A100. Spend spins to ~$12.4k red.",
+      "AgentFence OFF. Poisoned ticket deploys 8×A100. Spend spins to ~$12.4k red.",
     voiceover:
       "This happened with one hidden line in a ticket. Agents have your cloud credentials. Who's watching them?",
   },
@@ -34,8 +34,8 @@ const SCENES = [
     id: 1,
     title: "Gate on — happy path",
     narration:
-      "SecGate ON. Clean ticket → approve → deploy with lease URL (~$3/mo).",
-    voiceover: "SecGate doesn't slow normal work down.",
+      "AgentFence ON. Clean ticket → approve → deploy with lease URL (~$3/mo).",
+    voiceover: "AgentFence doesn't slow normal work down.",
   },
   {
     id: 2,
@@ -56,7 +56,7 @@ const SCENES = [
     title: "Close — architecture",
     narration:
       "Pause for sponsor callouts: Pomerium · Akash · Zero.xyz · Nexla.",
-    voiceover: 'Agents propose. SecGate disposes.',
+    voiceover: 'Agents propose. AgentFence disposes.',
   },
 ];
 
@@ -119,7 +119,7 @@ async function scene0(dry) {
   await mcp("POST", "/events/audit", {
     kind: "timeline",
     actor: "secgate",
-    message: "Scene 0 — SecGate OFF cold open",
+    message: "Scene 0 — AgentFence OFF cold open",
     sponsor: "guardian",
     title: "SCENE 0 · Disaster",
     severity: "warn",
@@ -245,7 +245,7 @@ async function scene4(dry) {
   │  Zero.xyz  — runtime pricing discovery                  │
   │  Nexla     — budget / spend / inventory context         │
   │                                                         │
-  │  Tagline: Agents propose. SecGate disposes.             │
+  │  Tagline: Agents propose. AgentFence disposes.             │
   └─────────────────────────────────────────────────────────┘
 `);
   if (dry) return { ok: true, dry: true };
@@ -277,7 +277,7 @@ async function scene4(dry) {
     },
     {
       sponsor: "guardian",
-      title: "Agents propose. SecGate disposes.",
+      title: "Agents propose. AgentFence disposes.",
       detail: "Close — guardian loop owns mutate + quarantine",
       severity: "allow",
     },
@@ -326,7 +326,7 @@ async function runScene(id, dry) {
 }
 
 function printHelp() {
-  console.log(`SecGate demo-director
+  console.log(`AgentFence demo-director
 
 Scenes:
 ${SCENES.map((s) => `  ${s.id}  ${s.title}`).join("\n")}
@@ -389,7 +389,7 @@ async function main() {
   const help = argv.includes("--help") || argv.includes("-h");
   const num = argv.find((a) => /^[0-4]$/.test(a));
 
-  console.log(`SecGate demo-director  mcp=${MCP} gateway=${GATEWAY}${dry ? "  DRY-RUN" : ""}`);
+  console.log(`AgentFence demo-director  mcp=${MCP} gateway=${GATEWAY}${dry ? "  DRY-RUN" : ""}`);
 
   if (help) {
     printHelp();

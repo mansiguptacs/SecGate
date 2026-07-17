@@ -2,7 +2,7 @@
   "name": "secgate",
   "version": "0.1.0",
   "private": true,
-  "description": "SecGate — Zero-Trust Guardrail for Infra Agents",
+  "description": "AgentFence — Zero-Trust Guardrail for Infra Agents",
   "workspaces": [
     "shared",
     "infra-mcp",

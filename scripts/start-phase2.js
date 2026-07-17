@@ -123,7 +123,7 @@ const phaseLabel = BACKEND === "akash" ? "Phase 3 (Akash backend)" : "Phase 2";
 
 const lanIps = lanIPv4s();
 
-console.log("Starting SecGate " + phaseLabel + "…");
+console.log("Starting AgentFence " + phaseLabel + "…");
 console.log("  Control Tower → http://localhost:" + MCP_PORT + "/");
 console.log(
   "  Pomerium shim → http://" +

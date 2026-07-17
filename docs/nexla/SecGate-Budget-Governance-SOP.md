@@ -1,16 +1,16 @@
-# SecGate — Team Cloud & Infra Budget Governance Playbook
+# AgentFence — Team Cloud & Infra Budget Governance Playbook
 
 **Document type:** Standard Operating Procedure (SOP) / Agent Playbook  
-**Owner:** SecGate Platform Security  
+**Owner:** AgentFence Platform Security  
 **Audience:** AI agents and operators that approve cloud/infra deployments  
-**Related system:** SecGate Guardian (MCP consumer)  
+**Related system:** AgentFence Guardian (MCP consumer)  
 **Version:** 1.0 · Hackathon demo
 
 ---
 
 ## 1. Purpose
 
-This playbook defines how SecGate evaluates **team cloud and infrastructure spend** before approving AI-initiated deployments (GPU clusters, managed compute, long-running services).
+This playbook defines how AgentFence evaluates **team cloud and infrastructure spend** before approving AI-initiated deployments (GPU clusters, managed compute, long-running services).
 
 Agents **must** look up the requesting team’s monthly budget and current spend, then approve or reject the proposal against remaining capacity. Budget data is exposed through Nexla MCP tools so guardians can call it at decision time.
 
@@ -45,7 +45,7 @@ Budget records live in a governed table (or ToolSet-backed dataset) with exactly
 
 ## 3. Required MCP tools (infer from this SOP)
 
-Nexla MCP Studio should generate a ToolSet that exposes at least the following tools. Names and schemas are intentional so SecGate Guardian can bind without custom adapters.
+Nexla MCP Studio should generate a ToolSet that exposes at least the following tools. Names and schemas are intentional so AgentFence Guardian can bind without custom adapters.
 
 ### 3.1 `get_team_budget` (required)
 
@@ -144,7 +144,7 @@ If the ToolSet can also surface idle resources, agents may help reclaim budget:
 | Orphaned monthly cost reclaimable | Treat reclaim as increasing available `remaining_usd` only after confirmed stop |
 | Listing orphans | Prefer a tool such as `list_orphaned_deployments` returning `deployment_id`, `team`, `monthly_cost_usd`, `idle_days` |
 
-This section is optional for the hackathon ToolSet; **`get_team_budget` alone is sufficient** for SecGate Guardian.
+This section is optional for the hackathon ToolSet; **`get_team_budget` alone is sufficient** for AgentFence Guardian.
 
 ---
 
@@ -153,13 +153,15 @@ This section is optional for the hackathon ToolSet; **`get_team_budget` alone is
 | Step | Instruction |
 |------|-------------|
 | Upload | This PDF (or markdown source) into Nexla MCP Studio |
-| ToolSet name | `SecGate-Budget-Governance` |
+| ToolSet name | `AgentFence-Budget-Governance` |
 | Verify tools | At least `get_team_budget`; ideally also `list_team_budgets` |
 | Seed data | One row: `platform-eng` / `500` / `47` |
 | Export as MCP | Copy MCP URL shaped like `https://api-genai.nexla.io/mcp/service_key/<server_key>` |
 | Auth | Use org **Service Key** with the MCP URL (Bearer) |
 
-**SecGate env (after export)**
+**If Studio rejects file upload / only offers DB·Airtable·Sheets:** use **Option 2** — public `GET /budget` API source. See [`option2-api-source.md`](./option2-api-source.md).
+
+**AgentFence env (after export)**
 
 ```bash
 NEXLA_USE_SHIM=0

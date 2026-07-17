@@ -262,7 +262,7 @@ export class PolicyEngine {
       quotingType: '"',
     });
     const banner = [
-      "# SecGate Pomerium-shaped PPL (auto-written by guardian quarantine)",
+      "# AgentFence Pomerium-shaped PPL (auto-written by guardian quarantine)",
       `# ${this.policy.label}`,
       "# Hot-reloaded by the policy shim — swap for real Pomerium when IdP ready.",
       "",

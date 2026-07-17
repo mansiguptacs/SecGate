@@ -281,7 +281,7 @@ export async function processOrphanSweepOnce(
   }
 
   const running = deployments.filter((d) => d.status === "running");
-  // Skip sweep while SecGate is OFF (cold-open disaster must stay on screen)
+  // Skip sweep while AgentFence is OFF (cold-open disaster must stay on screen)
   try {
     const gateRes = await fetchJson<{ gate?: string }>(`${mcpUrl}/admin/gate`);
     if (gateRes.gate === "off") {

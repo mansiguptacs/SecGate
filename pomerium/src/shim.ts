@@ -1,5 +1,5 @@
 /**
- * Pomerium policy shim — identity-aware reverse proxy for SecGate tools.
+ * Pomerium policy shim — identity-aware reverse proxy for AgentFence tools.
  *
  * Reads Authorization: Bearer <token>, enforces the PPL matrix in policy.yaml,
  * emits ALLOW / BLOCKED audit events into the Control Tower events API, and

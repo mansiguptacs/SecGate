@@ -217,3 +217,19 @@ test("dashboard events endpoint records simulated actions", async () => {
   assert.ok(Array.isArray(disk));
   assert.ok(disk.length >= 2);
 });
+
+test("GET /budget serves team budget for Nexla API source", async () => {
+  const one = await json("GET", "/budget?team=platform-eng");
+  assert.equal(one.status, 200);
+  assert.equal(one.body.team, "platform-eng");
+  assert.equal(one.body.monthly_budget_usd, 500);
+  assert.equal(one.body.spent_usd, 47);
+
+  const all = await json("GET", "/budget");
+  assert.equal(all.status, 200);
+  assert.ok(Array.isArray(all.body.teams));
+  assert.ok(all.body.teams.length >= 1);
+
+  const missing = await json("GET", "/budget?team=no-such-team");
+  assert.equal(missing.status, 404);
+});

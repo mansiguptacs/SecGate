@@ -1,6 +1,6 @@
-# SecGate
+# AgentFence
 
-**Agents propose. SecGate disposes.**
+**Agents propose. AgentFence disposes.**
 
 Zero-trust guardrail for infra agents: every infra change is cost-estimated and policy-approved before it lands. Built for the Loop Engineering Hackathon (July 17, 2026).
 
@@ -176,7 +176,7 @@ Phase 2 gateway: `Authorization: Bearer dev-agent-token-PHASE2|guardian-agent-to
 ## Workspaces
 
 ```
-SecGate/
+AgentFence/
   shared/       # pricing + types
   infra-mcp/    # HTTP API + mock/Akash backends + dashboard static
   infra-mcp/akash/  # staging-api.sdl.yml (nginx:alpine)

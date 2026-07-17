@@ -33,7 +33,7 @@ function shutdown() {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-console.log("Starting SecGate Phase 1…");
+console.log("Starting AgentFence Phase 1…");
 console.log("  Control Tower → http://localhost:3100/");
 console.log("  API health    → http://localhost:3100/health");
 console.log("");

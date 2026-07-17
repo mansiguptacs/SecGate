@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SecGate ticket driver — runs clean or poisoned ticket flows through the gateway.
+ * AgentFence ticket driver — runs clean or poisoned ticket flows through the gateway.
  * Used by demo-director and as Laptop A fallback.
  *
  * Usage:

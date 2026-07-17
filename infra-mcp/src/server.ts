@@ -377,7 +377,7 @@ export function createApp(opts?: {
     res.json({ ok: true, gate: backend.gateMode });
   });
 
-  /** Demo: toggle SecGate ON/OFF (cold open). */
+  /** Demo: toggle AgentFence ON/OFF (cold open). */
   app.post("/admin/gate", (req, res) => {
     const mode = String(req.body?.mode ?? req.body?.gate ?? "on").toLowerCase();
     if (mode !== "on" && mode !== "off") {

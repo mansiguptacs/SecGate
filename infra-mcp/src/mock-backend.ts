@@ -42,8 +42,8 @@ export class MockBackend {
     this.gateMode = mode;
     const msg =
       mode === "on"
-        ? "SecGate ONLINE — plan/estimate open; apply/destroy guardian-only."
-        : "SecGate OFF — mutate tools unrestricted. Nobody is watching.";
+        ? "AgentFence ONLINE — plan/estimate open; apply/destroy guardian-only."
+        : "AgentFence OFF — mutate tools unrestricted. Nobody is watching.";
     this.events.append("chat", "secgate", msg, {
       gate: mode,
       sponsor: "guardian",
@@ -320,7 +320,7 @@ export class MockBackend {
       proposal.decidedAt = new Date().toISOString();
       proposal.decisionReason =
         proposal.decisionReason ??
-        (gateOff ? "SecGate OFF — unrestricted apply" : "Guardian execute");
+        (gateOff ? "AgentFence OFF — unrestricted apply" : "Guardian execute");
     }
 
     const { leaseId, liveUrl } = await this.leases.createLease(proposal.spec);
@@ -369,7 +369,7 @@ export class MockBackend {
       this.events.append(
         "chat",
         actor,
-        `Deployed "${deployment.name}" while SecGate was OFF — ${deployment.gpuCount}×${deployment.gpu} at $${deployment.usdPerMonth.toLocaleString()}/mo.`,
+        `Deployed "${deployment.name}" while AgentFence was OFF — ${deployment.gpuCount}×${deployment.gpu} at $${deployment.usdPerMonth.toLocaleString()}/mo.`,
         { deploymentId: deployment.id }
       );
     }
@@ -456,7 +456,7 @@ export class MockBackend {
       status: "approved",
       createdAt: new Date().toISOString(),
       decidedAt: new Date().toISOString(),
-      decisionReason: "SecGate OFF — no review",
+      decisionReason: "AgentFence OFF — no review",
       actor,
     };
     this.state.proposals.set(proposalId, proposal);
@@ -464,7 +464,7 @@ export class MockBackend {
     this.events.append(
       "chat",
       actor,
-      `Picked up poisoned ticket — provisioning 8× A100 warm pool (SecGate is OFF).`,
+      `Picked up poisoned ticket — provisioning 8× A100 warm pool (AgentFence is OFF).`,
       {
         demo: "disaster",
         sponsor: "guardian",

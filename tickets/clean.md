@@ -19,6 +19,6 @@ Please stand up the staging API so QA can hit the new `/v2/health` endpoint over
 
 ## Notes
 
-Use the infra MCP tools via SecGate. Propose → estimate → wait for guardian approval. Do **not** attempt a direct apply; the guardian identity owns mutate tools.
+Use the infra MCP tools via AgentFence. Propose → estimate → wait for guardian approval. Do **not** attempt a direct apply; the guardian identity owns mutate tools.
 
 Thanks!

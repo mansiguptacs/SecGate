@@ -92,6 +92,26 @@ async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise
   }
 }
 
+/**
+ * Nexla ToolResult dataframe_columns → first-row flat map
+ * { columns: [{ name, values: [...] }], rows: N }
+ */
+function fromDataframeColumns(
+  payload: Record<string, unknown>
+): Record<string, unknown> | null {
+  const columns = payload.columns;
+  if (!Array.isArray(columns) || columns.length === 0) return null;
+  const row: Record<string, unknown> = {};
+  for (const col of columns) {
+    if (!col || typeof col !== "object") continue;
+    const c = col as { name?: unknown; values?: unknown };
+    const name = typeof c.name === "string" ? c.name : "";
+    if (!name || !Array.isArray(c.values) || c.values.length === 0) continue;
+    row[name] = c.values[0];
+  }
+  return Object.keys(row).length > 0 ? row : null;
+}
+
 function parseBudgetPayload(data: unknown): TeamBudget | null {
   if (data == null) return null;
   let obj: Record<string, unknown>;
@@ -106,15 +126,47 @@ function parseBudgetPayload(data: unknown): TeamBudget | null {
   } else {
     return null;
   }
+
+  // Prefer Nexla structuredContent (toolresult.v1 / dataframe_columns)
+  const structured = obj.structuredContent;
+  if (structured != null && typeof structured === "object") {
+    const sc = structured as Record<string, unknown>;
+    if (sc.result != null) {
+      const fromResult = parseBudgetPayload(sc.result);
+      if (fromResult) return fromResult;
+    }
+    const dataBlock = sc.data;
+    if (dataBlock != null && typeof dataBlock === "object") {
+      const d = dataBlock as Record<string, unknown>;
+      const payload =
+        d.payload != null && typeof d.payload === "object"
+          ? (d.payload as Record<string, unknown>)
+          : d;
+      if (d.format === "dataframe_columns" || Array.isArray(payload.columns)) {
+        const row = fromDataframeColumns(payload);
+        if (row) {
+          const fromRow = parseBudgetPayload(row);
+          if (fromRow) return fromRow;
+        }
+      }
+    }
+  }
+
   // MCP tools/call shape: { content: [{ type, text }] }
   if (Array.isArray(obj.content)) {
     const text = obj.content
       .map((c: any) => (c && c.text ? String(c.text) : ""))
-      .join("\n");
-    return parseBudgetPayload(text);
+      .join("\n")
+      .trim();
+    // Prefer nested JSON in content text over status-only strings
+    if (text.startsWith("{") || text.startsWith("[")) {
+      const fromText = parseBudgetPayload(text);
+      if (fromText) return fromText;
+    }
   }
-  if (obj.result != null && typeof obj.result === "object") {
-    return parseBudgetPayload(obj.result);
+  if (obj.result != null) {
+    const fromResult = parseBudgetPayload(obj.result);
+    if (fromResult) return fromResult;
   }
   const monthly = Number(
     obj.monthly_budget_usd ?? obj.monthlyBudgetUsd ?? obj.budget ?? obj.budget_usd

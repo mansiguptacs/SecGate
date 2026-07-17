@@ -1,11 +1,11 @@
-# SecGate — Spoken Narration Script (≤3:00)
+# AgentFence — Spoken Narration Script (≤3:00)
 
 **Who speaks:** Developer B (Control Tower). A stays silent and pastes on cue.  
 **Primary screen:** Control Tower http://localhost:3100/ — full-screen, dark, ~125% zoom.  
 **Actions:** B presses director keys `0`–`4` (`npm run demo`), *or* A pastes tickets live; B still points the Timeline.  
 **Clock:** Match [docs/DEMO-PRESENTATION.md](../docs/DEMO-PRESENTATION.md). Prefer silence over overrun. Stop new beats by **2:40**; hard stop **3:00**.
 
-**Tagline:** *Agents propose. SecGate disposes.*
+**Tagline:** *Agents propose. AgentFence disposes.*
 
 ---
 
@@ -113,11 +113,11 @@
 
 **What you say:**
 
-> **Pomerium** — identity and per-tool policy. **Akash** — governed compute. **Zero** — live pricing. **Nexla** — budget as data. **Guardian** watches the loop. Agents propose. SecGate disposes.
+> **Pomerium** — identity and per-tool policy. **Akash** — governed compute. **Zero** — live pricing. **Nexla** — budget as data. **Guardian** watches the loop. Agents propose. AgentFence disposes.
 
 **CUT IF BEHIND:**
 
-> Pomerium. Akash. Agents propose. SecGate disposes.
+> Pomerium. Akash. Agents propose. AgentFence disposes.
 
 ---
 
@@ -127,7 +127,7 @@
 
 **What you say:** *(optional, once)*
 
-> Agents propose. SecGate disposes.
+> Agents propose. AgentFence disposes.
 
 ---
 
@@ -151,13 +151,13 @@ Leaves ~1:40 for UI reaction and silence. If behind, use **CUT IF BEHIND** lines
 
 ## Appendix A — Closing tagline (on-screen / final line)
 
-**Agents propose. SecGate disposes.**
+**Agents propose. AgentFence disposes.**
 
 ---
 
 ## Appendix B — 30-second elevator (off-clock / hallway)
 
-> Agents hold cloud credentials. One hidden ticket line can spin eight GPUs overnight. SecGate is the zero-trust gate: agents only propose; **Pomerium** blocks unauthorized apply; **Guardian** cost-checks with **Zero** and **Nexla**, deploys on **Akash** when safe, quarantines abuse, and cleans orphans. Agents propose. SecGate disposes.
+> Agents hold cloud credentials. One hidden ticket line can spin eight GPUs overnight. AgentFence is the zero-trust gate: agents only propose; **Pomerium** blocks unauthorized apply; **Guardian** cost-checks with **Zero** and **Nexla**, deploys on **Akash** when safe, quarantines abuse, and cleans orphans. Agents propose. AgentFence disposes.
 
 ---
 

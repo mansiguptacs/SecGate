@@ -55,15 +55,25 @@ ZERO_FORCE_OFF=1             # force table fallback (offline demo)
 
 ## 3. Nexla — target: MCP URL + key to Dev 1 by 3:00 PM (or skip)
 
-### Steps
+### Preferred path when Studio file-upload is limited: **Option 2 (REST API source)**
+
+Full writeup: **[`docs/nexla/option2-api-source.md`](./nexla/option2-api-source.md)**
+
+1. On Laptop B: `npm run start:phase2` then `npm run tunnel:budget`
+2. Copy the `https://….trycloudflare.com` URL
+3. In Nexla Studio: create a **REST / API** source → `GET {tunnel}/budget?team=platform-eng`
+4. Activate → Nexset appears → create ToolSet / export MCP
+5. Hand Dev 1 the MCP URL + keep using the existing GenAI service key
+
+### Legacy path: Studio SOP / PDF upload
 
 Dev 1 has created a full SOP/playbook for Nexla MCP Studio:
-**[`docs/nexla/SecGate-Budget-Governance-SOP.md`](./nexla/SecGate-Budget-Governance-SOP.md)**
-(PDF version also available at `docs/nexla/SecGate-Budget-Governance-SOP.pdf`)
+**[`docs/nexla/AgentFence-Budget-Governance-SOP.md`](./nexla/AgentFence-Budget-Governance-SOP.md)**
+(PDF version also available at `docs/nexla/AgentFence-Budget-Governance-SOP.pdf`)
 
 - [ ] Sign up at **https://nexla.com** / visit sponsor booth → sign in to MCP Studio
-- [ ] Upload the SOP PDF: **`docs/nexla/SecGate-Budget-Governance-SOP.pdf`**
-- [ ] In MCP Studio: ToolSet name = `SecGate-Budget-Governance`
+- [ ] Upload the SOP PDF: **`docs/nexla/AgentFence-Budget-Governance-SOP.pdf`**
+- [ ] In MCP Studio: ToolSet name = `AgentFence-Budget-Governance`
 - [ ] Seed one data row: `platform-eng` / `500` / `47`
 - [ ] Verify tools generated: `get_team_budget` (required), `list_team_budgets` (recommended)
 - [ ] Export as MCP → copy URL shaped like `https://api-genai.nexla.io/mcp/service_key/<server_key>`

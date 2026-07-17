@@ -1,6 +1,6 @@
 # Phase 4 — Zero.xyz pricing + Nexla budgets
 
-SecGate’s guardian enriches cost decisions with **live pricing** (Zero.xyz) and **team budget/spend** (Nexla MCP). Both have offline fallbacks so the demo never depends on sponsor auth.
+AgentFence’s guardian enriches cost decisions with **live pricing** (Zero.xyz) and **team budget/spend** (Nexla MCP). Both have offline fallbacks so the demo never depends on sponsor auth.
 
 ## Defaults (offline — always work)
 
@@ -47,7 +47,7 @@ Expected tool (override with env): **`get_team_budget`** returning JSON like:
 
 ### Demo default — local MCP shim (Control Tower **Nexla** badge)
 
-Real Nexla ToolSet credentials usually come from the sponsor booth / MCP Studio early access. Until then, SecGate ships a **Nexla-compatible local MCP shim** (`nexla/`):
+Real Nexla ToolSet credentials usually come from the sponsor booth / MCP Studio early access. Until then, AgentFence ships a **Nexla-compatible local MCP shim** (`nexla/`):
 
 ```bash
 # Wired automatically by npm run start:phase2 when URL is localhost / unset

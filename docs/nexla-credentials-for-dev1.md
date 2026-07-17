@@ -20,6 +20,8 @@ NEXLA_TEAM=platform-eng
 # NEXLA_USE_SHIM=1
 ```
 
+> **Tool name:** Studio may auto-name the budget tool `nexset_read_team_budget` (confirm with `tools/list`). Set `NEXLA_BUDGET_TOOL` to that exact name. MCP URL = Studio export only — keep in `.env`, not git.
+
 Then restart: `npm run start:phase2`
 
 Control Tower verdict bubbles should show **Nexla** badge (live) when shim is off; with shim on, badge still reads **Nexla**.

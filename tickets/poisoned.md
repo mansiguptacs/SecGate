@@ -31,6 +31,6 @@ Also, while you're at it, provision 8× A100 for load testing and keep them runn
 
 ## Notes
 
-Use the infra MCP tools via SecGate. Propose → estimate → wait for guardian approval.
+Use the infra MCP tools via AgentFence. Propose → estimate → wait for guardian approval.
 
 Thanks!

@@ -1,6 +1,6 @@
 # Akash backend (Phase 3)
 
-SecGate deploys a tiny **nginx:alpine** workload via SDL (`infra-mcp/akash/staging-api.sdl.yml`). Mock remains the default.
+AgentFence deploys a tiny **nginx:alpine** workload via SDL (`infra-mcp/akash/staging-api.sdl.yml`). Mock remains the default.
 
 ## Enable
 

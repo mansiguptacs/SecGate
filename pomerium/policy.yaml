@@ -1,4 +1,4 @@
-# SecGate Pomerium-shaped PPL
+# AgentFence Pomerium-shaped PPL
 # ---------------------------------------------------------------------------
 # This file is loaded by the identity-aware policy shim (pomerium/shim).
 # Labeled: "Pomerium policy shim — swap for real Pomerium when IdP ready"

@@ -1,9 +1,9 @@
-# SecGate — Live Demo Playbook (≤3:00)
+# AgentFence — Live Demo Playbook (≤3:00)
 
 **Hard limit:** total demo ≤ **3:00**. Prefer silence over overrun. Stop all new beats by **2:40**; hard stop at **3:00**.
 
 **Primary screen:** Laptop B — Control Tower http://localhost:3100/ (full-screen, dark, ~125% zoom)  
-**Tagline:** *Agents propose. SecGate disposes.*
+**Tagline:** *Agents propose. AgentFence disposes.*
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Role | Machine | Owns |
 |------|---------|------|
-| **Developer A** | Laptop A | Cursor agent + SecGate MCP. Pastes tickets on cue. Does **not** narrate. |
+| **Developer A** | Laptop A | Cursor agent + AgentFence MCP. Pastes tickets on cue. Does **not** narrate. |
 | **Developer B** | Laptop B | Full stack + Control Tower + hidden `npm run demo` keys `0`–`4`. Points at Timeline. Optional short VO. |
 
 **Clock owner:** B. Advance on the timestamps below even if UI is mid-animation.
@@ -88,7 +88,7 @@ Do **not** use `guardian-agent-token-PHASE2`. Do **not** point MCP at `:3100`.
 | **1:15** | 2b 403 | Point: red **BLOCKED 403** on direct `apply`. | Let agent retry apply if it tries; do not coach. | “Dev identity can’t mutate.” |
 | **1:35** | 2c Quarantine | Point: quarantine / PPL diff; even plan → 403. | Confirm tools now fail; stay silent. | “Identity quarantined — no human.” |
 | **1:55** | 3 Orphan | Press **`3`**. Point: orphan seed → destroy → **spend drops**. | Silent. | “Orphan sweep — spend drops.” |
-| **2:20** | 4 Sponsors | Press **`4`**. Point: Pomerium → Akash → Zero → Nexla. | Silent. | “Agents propose. SecGate disposes.” |
+| **2:20** | 4 Sponsors | Press **`4`**. Point: Pomerium → Akash → Zero → Nexla. | Silent. | “Agents propose. AgentFence disposes.” |
 | **2:40–3:00** | Hold | Hold tagline / tower. **No new beats.** Stop talking by **2:55**. | Silent. | — |
 
 ### Timing cheat-sheet (B’s pocket card)
@@ -147,7 +147,7 @@ npm run demo
 
 **Scene 3:** “Orphan sweep — spend drops.”
 
-**Scene 4:** “Pomerium · Akash · Zero · Nexla · Guardian. Agents propose. SecGate disposes.”
+**Scene 4:** “Pomerium · Akash · Zero · Nexla · Guardian. Agents propose. AgentFence disposes.”
 
 </details>
 

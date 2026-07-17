@@ -1,6 +1,6 @@
 # Laptop A cheatsheet (developer machine)
 
-You are the **developer agent**. Laptop B runs SecGate (Control Tower + gateway + guardian). Prefer the **LAN gateway URL** — not ephemeral Cloudflare quick tunnels.
+You are the **developer agent**. Laptop B runs AgentFence (Control Tower + gateway + guardian). Prefer the **LAN gateway URL** — not ephemeral Cloudflare quick tunnels.
 
 ## 0. Connection preference (read this)
 
@@ -17,13 +17,13 @@ Ask Laptop B for their LAN IP (or look at `docs/cursor-mcp.json`). Only ask for 
 ## 1. Get the code
 
 ```bash
-git clone <repo-url> SecGate   # or: cd SecGate && git pull origin main
-cd SecGate
+git clone <repo-url> AgentFence   # or: cd AgentFence && git pull origin main
+cd AgentFence
 ```
 
 You do **not** need `.env`, Akash, Nexla, or Zero on this machine.
 
-## 2. Add SecGate MCP in Cursor
+## 2. Add AgentFence MCP in Cursor
 
 Settings → MCP → Add server (or merge into your Cursor MCP config).
 
