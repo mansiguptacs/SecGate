@@ -1,0 +1,122 @@
+# Sponsor Onboarding Checklist — Dev 2 (Laptop A)
+
+Last updated: 2026-07-17  
+Hand credentials to Dev 1 **on Laptop B** by the times noted.
+
+---
+
+## 1. Akash Network — target: hand key to Dev 1 by 2:45 PM
+
+### Steps
+
+- [ ] Go to **https://console.akash.network** → sign in / create account
+- [ ] Visit sponsor booth → get hackathon credits applied to wallet
+- [ ] Verify: deploy any hello-world template from Console UI, confirm it runs
+- [ ] Generate API key: Console → **Settings → API Keys → Create**
+- [ ] Copy the key (`ac.sk....` format)
+
+### Hand to Dev 1
+
+```
+AKASH_API_KEY=ac.sk....
+BACKEND=akash
+```
+
+Dev 1 sets these on Laptop B before `npm run start:phase3`.  
+**Without this key**, Akash runs in dry-run mode (fake URLs, still looks good on dashboard).
+
+---
+
+## 2. Zero.xyz — target: authenticated on Laptop B by 2:30 PM
+
+> ⚠️ Must be done **on Laptop B** — guardian reads `~/.zero` on whatever machine runs the stack.
+
+### Steps (run on Laptop B, not this machine)
+
+```bash
+npm i -g @zeroxyz/cli
+zero init
+zero auth login          # completes browser OAuth
+zero search "cloud GPU A100 pricing"   # smoke test — should return results
+```
+
+### Verify it works
+
+Guardian auto-detects `~/.zero/config.json` + session. Control Tower verdict bubbles will show a **Zero** badge instead of **table** when live.
+
+**Env overrides** (if CLI path is non-standard):
+```bash
+ZERO_BIN=/path/to/zero       # override binary path
+ZERO_FORCE_ON=1              # force Zero-ready (needs working CLI)
+ZERO_FORCE_OFF=1             # force table fallback (offline demo)
+```
+
+---
+
+## 3. Nexla — target: MCP URL + key to Dev 1 by 3:00 PM (or skip)
+
+### Steps
+
+- [ ] Sign up at **https://nexla.com** / visit sponsor booth
+- [ ] Create a ToolSet backed by this budget table:
+
+```
+team               | monthly_budget_usd | spent_usd
+-------------------|--------------------|----------
+platform-eng       | 500                | 47
+```
+
+- [ ] Expose as MCP server with tool name **`get_team_budget`** returning:
+
+```json
+{
+  "team": "platform-eng",
+  "monthly_budget_usd": 500,
+  "spent_usd": 47
+}
+```
+
+- [ ] Get MCP URL and service key
+
+### Hand to Dev 1
+
+```bash
+NEXLA_MCP_URL=https://api-genai.nexla.io/mcp/service_key/<server_key>
+NEXLA_SERVICE_KEY=nxl_sk_....
+```
+
+### If Nexla onboarding stalls past 3:00 PM
+
+Tell Dev 1 to **keep the local JSON fallback** (`data/budget.json` — already set to `spent_usd: 47`).  
+Take a screenshot of the Nexla config for the demo video close / Devpost instead.
+
+---
+
+## 4. Sync Points
+
+| Time | Action |
+|------|--------|
+| **2:15 PM** | Gateway up on Laptop B → get tunnel URL → configure Cursor MCP |
+| **2:45 PM** | Hand `AKASH_API_KEY` to Dev 1 |
+| **3:00 PM** | Hand Nexla URL+key to Dev 1 (or confirm fallback) |
+| **3:30 PM** | Full rehearsal — both laptops |
+| **3:50 PM** | Record 3-min video |
+| **4:30 PM** | Devpost submit deadline |
+
+---
+
+## 5. What Dev 2 Does While Waiting for Tunnel URL (now → 2:15 PM)
+
+- [x] `tickets/clean.md` — written
+- [x] `tickets/poisoned.md` — written
+- [x] `demo/narration_script.md` — written, matches scene 0–4 keys
+- [x] `demo/devpost_submission.md` — written
+- [x] `demo/recording_setup.md` — written with exact curl smoke tests
+- [x] `data/budget.json` — set `spent_usd: 47` for demo realism
+- [ ] Akash Console account + credits (sponsor booth)
+- [ ] Zero.xyz: auth on Laptop B (coordinate with Dev 1)
+- [ ] Nexla: ToolSet + MCP URL
+- [ ] Configure Cursor MCP server (after 2:15 PM sync)
+- [ ] Smoke test: `plan_deployment` → 200, `apply_deployment` → 403
+- [ ] Record demo video (3:50 PM)
+- [ ] Submit Devpost (4:20 PM)
