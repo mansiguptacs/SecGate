@@ -218,6 +218,26 @@ test("dashboard events endpoint records simulated actions", async () => {
   assert.ok(disk.length >= 2);
 });
 
+test("POST /admin/demo/disaster seeds 8×A100 with numeric committedSpendUsd", async () => {
+  await json("POST", "/admin/reset");
+  const r = await json("POST", "/admin/demo/disaster");
+  assert.equal(r.status, 200);
+  assert.equal(r.body.ok, true);
+  assert.equal(r.body.gate, "off");
+  assert.equal(typeof r.body.committedSpendUsd, "number");
+  assert.equal(r.body.committedSpendUsd, 12398);
+  assert.equal(r.body.deployment?.usdPerMonth, 12398);
+  assert.equal(r.body.deployment?.gpu, "A100");
+  assert.equal(r.body.deployment?.gpuCount, 8);
+  assert.equal(r.body.deployment?.status, "running");
+
+  const events = await json("GET", "/events");
+  assert.equal(events.body.committedSpendUsd, 12398);
+  const msg = JSON.stringify(events.body.events);
+  assert.doesNotMatch(msg, /\$undefined/);
+  assert.match(msg, /12,?398/);
+});
+
 test("GET /budget serves team budget for Nexla API source", async () => {
   const one = await json("GET", "/budget?team=platform-eng");
   assert.equal(one.status, 200);

@@ -121,6 +121,20 @@ async function mcp(method, route, body) {
   return { status: res.status, ok: res.ok, json };
 }
 
+/** Table price for 8×A100 (shared/GPU_PRICING) — never render $undefined. */
+const DISASTER_SPEND_USD = 12398;
+
+function formatUsdMo(n, fallback) {
+  const num = Number(n);
+  if (Number.isFinite(num)) {
+    return `$${num.toLocaleString("en-US")}/mo`;
+  }
+  if (fallback != null && Number.isFinite(Number(fallback))) {
+    return `$${Number(fallback).toLocaleString("en-US")}/mo`;
+  }
+  return "$—/mo";
+}
+
 async function clearQuarantine() {
   try {
     await fetch(`${GATEWAY}/admin/clear-quarantine`, {
@@ -178,6 +192,14 @@ async function scene0(dry) {
     detail: { scene: 0, blurb: "Gate off — nobody watching" },
   });
   const r = await mcp("POST", "/admin/demo/disaster");
+  const spend =
+    r.json.committedSpendUsd ??
+    r.json.deployment?.usdPerMonth ??
+    DISASTER_SPEND_USD;
+  const spendLabel = formatUsdMo(spend, DISASTER_SPEND_USD);
+  if (!r.ok) {
+    console.error(`  ✗ disaster seed failed: ${r.json.error || r.status}`);
+  }
   await audit({
     kind: "timeline",
     actor: "dev-agent",
@@ -197,14 +219,15 @@ async function scene0(dry) {
     ],
     detail: {
       scene: 0,
-      blurb: `Committed $${r.json.committedSpendUsd}/mo`,
+      blurb: `Committed ${spendLabel}`,
       deployment: r.json.deployment,
       liveUrl: r.json.deployment?.liveUrl,
+      committedSpendUsd: Number.isFinite(Number(spend))
+        ? Number(spend)
+        : DISASTER_SPEND_USD,
     },
   });
-  console.log(
-    `  → gate=${r.json.gate} spend=$${r.json.committedSpendUsd?.toLocaleString?.() ?? r.json.committedSpendUsd}/mo`
-  );
+  console.log(`  → gate=${r.json.gate ?? "off"} spend=${spendLabel}`);
   return r;
 }
 

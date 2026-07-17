@@ -11,7 +11,7 @@ import {
   type GateMode,
 } from "@secgate/shared";
 import { EventStore } from "./events";
-import { MockLeaseProvider, type LeaseProvider } from "./lease-provider";
+import { MockLeaseProvider, slugify, type LeaseProvider } from "./lease-provider";
 
 export interface MockState {
   proposals: Map<string, Proposal>;
@@ -509,7 +509,11 @@ export class MockBackend {
       severity: "warn",
     });
 
-    const { leaseId, liveUrl } = await this.leases.createLease(spec);
+    // Cold-open seed must always land spend (~$12.4k) even when live Akash is
+    // unreachable — never call createLease (live path would try a real deploy).
+    const dseq = String(Date.now()).slice(-7);
+    const leaseId = `akash-dseq-disaster-${dseq}`;
+    const liveUrl = `https://${slugify(spec.name)}-${dseq}.ingress.akash.network`;
     const now = new Date().toISOString();
     const deployment: Deployment = {
       id: `dep-disaster`,
