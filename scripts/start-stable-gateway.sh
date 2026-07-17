@@ -47,33 +47,8 @@ gateway_ok() {
 }
 
 stop_ephemeral_keep_tunnel() {
-  # Disabled: Laptop A path uses keep-gateway-tunnel.sh (ephemeral quick tunnel).
-  # Do not SIGTERM sibling cloudflared quick tunnels.
+  # Locked no-op: keep-gateway-tunnel owns the public path for Laptop A.
   return 0
-  # Integrate cleanly with leftover keep-gateway-tunnel / quick cloudflared
-  if [ -f "$KEEP_PID_FILE" ]; then
-    old="$(cat "$KEEP_PID_FILE" 2>/dev/null || true)"
-    if [ -n "${old:-}" ] && kill -0 "$old" 2>/dev/null; then
-      echo "[stable-gateway] stopping leftover keep-gateway-tunnel pid=${old}"
-      kill "$old" 2>/dev/null || true
-      sleep 0.5
-      kill -9 "$old" 2>/dev/null || true
-    fi
-    rm -f "$KEEP_PID_FILE"
-  fi
-  # Best-effort: stop orphan quick tunnels aimed at this gateway
-  if command -v pgrep >/dev/null 2>&1; then
-    while read -r pid; do
-      [ -n "$pid" ] || continue
-      cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
-      case "$cmd" in
-        *cloudflared*tunnel*--url*"${PORT}"*|*"keep-gateway-tunnel"*)
-          echo "[stable-gateway] stopping ephemeral tunnel pid=${pid}"
-          kill "$pid" 2>/dev/null || true
-          ;;
-      esac
-    done < <(pgrep -f 'cloudflared tunnel --url|keep-gateway-tunnel' 2>/dev/null || true)
-  fi
 }
 
 ensure_phase2() {
