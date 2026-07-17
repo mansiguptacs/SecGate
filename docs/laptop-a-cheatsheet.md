@@ -68,5 +68,5 @@ Watch Laptop B’s **Control Tower**: http://localhost:3100/ (on their screen) f
 |------|-------|
 | Gateway tunnel | `https://delays-era-replace-lightning.trycloudflare.com` |
 | Dev token | `Bearer dev-agent-token-PHASE2` |
-| Budget tunnel (optional) | `https://draft-sao-cpu-deeper.trycloudflare.com` |
+| Budget tunnel (optional) | `https://region-cancelled-suites-phpbb.trycloudflare.com` |
 | Control Tower (Laptop B only) | `http://localhost:3100/` |

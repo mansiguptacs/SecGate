@@ -32,7 +32,7 @@ Authorization: Bearer guardian-agent-token-PHASE2 # guardian only (do NOT put on
 | Endpoint | URL | Who uses it |
 |----------|-----|-------------|
 | **Gateway (MCP)** `:3200` | `https://delays-era-replace-lightning.trycloudflare.com` | **Laptop A** — Cursor MCP |
-| Control Tower / budget `:3100` | `https://draft-sao-cpu-deeper.trycloudflare.com` | Optional remote budget/dashboard |
+| Control Tower / budget `:3100` | `https://region-cancelled-suites-phpbb.trycloudflare.com` | Optional remote budget/dashboard |
 | Control Tower (local) | `http://localhost:3100/` | **Laptop B** operator |
 
 **Dev bearer token (Laptop A only):** `dev-agent-token-PHASE2`
