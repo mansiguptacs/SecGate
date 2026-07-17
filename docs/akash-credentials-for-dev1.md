@@ -2,13 +2,15 @@
 
 Received: **2026-07-17 ~2:13 PM PDT** — from Akash Console account.
 
+> **Security:** Live keys were previously committed in this file. Treat them as **compromised** — rotate in Akash Console and put the new key only in local `.env` (gitignored). Do not paste production keys into git.
+
 ## Set on Laptop B
 
-Add to `.env` or export before starting the stack:
+Add to `.env` (never commit) or export before starting the stack:
 
 ```bash
 BACKEND=akash
-AKASH_API_KEY=ac.sk.production.144ef53c558a5e4dcde53f02e2e4627b521c847eca1108a642f8a1436ee02eb1
+AKASH_API_KEY=<paste-rotated-akash-console-api-key>
 ```
 
 Then restart:
@@ -45,9 +47,9 @@ curl -s http://localhost:3200/plan_deployment \
 
 ## Nexla status (for reference)
 
-- `NEXLA_USE_SHIM=1` on both Laptop A and B — correct for now.
-- Org has 0 Nexsets; local shim starts automatically with `start:phase2`.
+- Prefer `NEXLA_USE_SHIM=1` until a Nexset exists (org had 0 at handoff).
+- Local shim starts automatically with `start:phase2`.
 - Control Tower will show **Nexla** badge from the shim — looks identical to live.
-- If Nexla studio gets a Nexset configured before 3:00 PM: set `NEXLA_USE_SHIM=0`,
+- If Nexla studio gets a Nexset configured: set `NEXLA_USE_SHIM=0`,
   `NEXLA_MCP_URL=https://api-genai.nexla.io/mcp/service_key/<server_key>`,
-  `NEXLA_SERVICE_KEY=2b34d31db2c741a8ac8bd7166dbe8d98`, restart.
+  `NEXLA_SERVICE_KEY=<rotated-nexla-service-key>` in `.env` only, then restart.
