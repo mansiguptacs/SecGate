@@ -50,7 +50,176 @@ html, body {
   z-index: 0;
 }
 
-.banner, .tower, .status-bar { position: relative; z-index: 1; }
+.banner, .tower, .status-bar, .timeline-band { position: relative; z-index: 1; }
+
+/* ── Sponsor timeline (demo hero strip) ── */
+.timeline-band {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(14, 24, 20, 0.95), rgba(11, 18, 16, 0.88));
+  padding: 0.55rem 1.25rem 0.75rem;
+}
+
+.timeline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+}
+
+.timeline-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.leg {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid currentColor;
+  opacity: 0.9;
+}
+
+.sponsor-pomerium { color: #6ec8ff; }
+.sponsor-zero { color: #f0c14a; }
+.sponsor-nexla { color: #c49bff; }
+.sponsor-akash { color: #ff8a5c; }
+.sponsor-guardian { color: var(--accent); }
+
+.timeline-rail {
+  position: relative;
+  max-height: 210px;
+  overflow-y: auto;
+  padding: 0.35rem 0.25rem 0.35rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  scroll-behavior: smooth;
+}
+
+.timeline-rail::before {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent-dim), var(--line), var(--danger));
+  opacity: 0.7;
+}
+
+.timeline-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.tl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 7.2rem 1fr auto;
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--line);
+  background: var(--bg-1);
+  animation: tlIn 0.45s ease;
+}
+
+.tl-row::before {
+  content: "";
+  position: absolute;
+  left: -0.92rem;
+  top: 0.85rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgba(11, 18, 16, 0.9);
+}
+
+.tl-row.sev-allow { border-color: rgba(61, 214, 140, 0.35); }
+.tl-row.sev-block {
+  border-color: rgba(255, 92, 92, 0.55);
+  animation: tlIn 0.45s ease, tlFlashBlock 0.85s ease;
+}
+.tl-row.sev-warn { border-color: rgba(240, 193, 74, 0.45); }
+.tl-row.sev-info { border-color: var(--line); }
+
+.tl-sponsor {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-top: 0.1rem;
+}
+
+.tl-body .tl-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.tl-body .tl-detail {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.tl-meta {
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.tl-sev {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.12rem 0.3rem;
+  border: 1px solid currentColor;
+}
+
+.tl-sev.allow { color: var(--allow); }
+.tl-sev.block { color: var(--block); }
+.tl-sev.warn { color: var(--warn); }
+.tl-sev.info { color: var(--muted); }
+
+@keyframes tlIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tlFlashBlock {
+  0%, 100% { background: var(--bg-1); }
+  35% { background: rgba(255, 92, 92, 0.22); }
+}
+
+@media (max-width: 720px) {
+  .tl-row { grid-template-columns: 1fr; }
+  .tl-meta { text-align: left; }
+  .timeline-rail { max-height: 260px; }
+}
 
 .banner {
   display: grid;
@@ -231,7 +400,7 @@ body.gate-off .banner {
   display: grid;
   grid-template-columns: 1.1fr 1.2fr 1fr;
   gap: 0;
-  min-height: calc(100vh - 170px);
+  min-height: calc(100vh - 420px);
 }
 
 .pane {

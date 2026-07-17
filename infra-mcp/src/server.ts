@@ -22,9 +22,46 @@ const EVENTS_FILE = path.join(DATA_DIR, "events.json");
 const BUDGET_FILE = process.env.SECGATE_BUDGET_FILE
   ? path.resolve(process.env.SECGATE_BUDGET_FILE)
   : path.join(DATA_DIR, "budget.json");
+const TEAM_BUDGETS_FILE = process.env.SECGATE_TEAM_BUDGETS_FILE
+  ? path.resolve(process.env.SECGATE_TEAM_BUDGETS_FILE)
+  : path.resolve(__dirname, "../../docs/nexla/team-budgets.json");
 const DASHBOARD_DIR = path.resolve(__dirname, "../../dashboard");
 
-function loadBudgetSnapshot(): {
+export type TeamBudgetRow = {
+  team: string;
+  monthly_budget_usd: number;
+  spent_usd: number;
+};
+
+function loadTeamBudgets(): TeamBudgetRow[] {
+  try {
+    if (fs.existsSync(TEAM_BUDGETS_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(TEAM_BUDGETS_FILE, "utf8")) as unknown;
+      if (Array.isArray(raw)) {
+        return raw
+          .filter((r): r is Record<string, unknown> => !!r && typeof r === "object")
+          .map((r) => ({
+            team: String(r.team ?? ""),
+            monthly_budget_usd: Number(r.monthly_budget_usd ?? r.monthlyBudgetUsd ?? 0),
+            spent_usd: Number(r.spent_usd ?? r.spentUsd ?? 0),
+          }))
+          .filter((r) => r.team);
+      }
+    }
+  } catch {
+    /* fall through */
+  }
+  const snap = loadBudgetSnapshotFromFile();
+  return [
+    {
+      team: snap.team,
+      monthly_budget_usd: snap.budgetUsd,
+      spent_usd: snap.spentUsd,
+    },
+  ];
+}
+
+function loadBudgetSnapshotFromFile(): {
   budgetUsd: number;
   spentUsd: number;
   team: string;
@@ -53,6 +90,26 @@ function loadBudgetSnapshot(): {
     team: "platform-eng",
     budgetSource: "local",
   };
+}
+
+function loadBudgetSnapshot(): {
+  budgetUsd: number;
+  spentUsd: number;
+  team: string;
+  budgetSource: BudgetSource;
+} {
+  const defaultTeam = process.env.NEXLA_TEAM ?? "platform-eng";
+  const rows = loadTeamBudgets();
+  const match = rows.find((r) => r.team === defaultTeam) ?? rows[0];
+  if (match) {
+    return {
+      budgetUsd: match.monthly_budget_usd,
+      spentUsd: match.spent_usd,
+      team: match.team,
+      budgetSource: "local",
+    };
+  }
+  return loadBudgetSnapshotFromFile();
 }
 
 const BUDGET_SNAP = loadBudgetSnapshot();
@@ -98,6 +155,33 @@ export function createApp(opts?: {
     });
   });
 
+  /**
+   * Public-friendly budget API for Nexla Studio "REST / API source".
+   * GET /budget?team=platform-eng → single row (get_team_budget shape)
+   * GET /budget → all teams (list_team_budgets shape)
+   */
+  app.get("/budget", (req, res) => {
+    const rows = loadTeamBudgets();
+    const team =
+      typeof req.query.team === "string" && req.query.team.trim()
+        ? req.query.team.trim()
+        : undefined;
+    res.setHeader("cache-control", "no-store");
+    if (!team) {
+      res.json({ teams: rows, count: rows.length });
+      return;
+    }
+    const row = rows.find((r) => r.team === team);
+    if (!row) {
+      res.status(404).json({
+        error: `Unknown team: ${team}`,
+        known_teams: rows.map((r) => r.team),
+      });
+      return;
+    }
+    res.json(row);
+  });
+
   /** Gateway / guardian audit sink (ALLOW / BLOCKED 403 from Pomerium policy shim). */
   app.post("/events/audit", (req, res) => {
     const kind = String(req.body?.kind ?? "blocked");
@@ -107,11 +191,30 @@ export function createApp(opts?: {
       req.body?.detail && typeof req.body.detail === "object"
         ? (req.body.detail as Record<string, unknown>)
         : undefined;
+    const sponsor = req.body?.sponsor as string | undefined;
+    const title =
+      typeof req.body?.title === "string" ? (req.body.title as string) : undefined;
+    const severity =
+      typeof req.body?.severity === "string"
+        ? (req.body.severity as string)
+        : undefined;
     if (!message) {
       res.status(400).json({ ok: false, error: "message required" });
       return;
     }
-    const event = events.append(kind as any, actor, message, detail);
+    const event = events.append(
+      kind as any,
+      actor,
+      message,
+      sponsor
+        ? {
+            sponsor: sponsor as any,
+            title: title || message.slice(0, 80),
+            severity: severity as any,
+            detail,
+          }
+        : detail
+    );
     res.json({ ok: true, event });
   });
 
@@ -374,6 +477,7 @@ export function startServer(): void {
     console.log(`[infra-mcp] Dashboard: http://localhost:${PORT}/`);
     console.log(`[infra-mcp] Tools:     http://localhost:${PORT}/tools`);
     console.log(`[infra-mcp] Events:    http://localhost:${PORT}/events`);
+    console.log(`[infra-mcp] Budget API: http://localhost:${PORT}/budget?team=platform-eng`);
     console.log(`[infra-mcp] Budget:    $${BUDGET}/mo`);
     if (backendMode === "akash" && leaseKind === "akash-dry-run") {
       console.log(

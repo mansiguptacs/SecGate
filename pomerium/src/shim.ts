@@ -94,6 +94,9 @@ export function createShim(opts?: {
         kind: "blocked",
         actor: "guardian",
         message: `QUARANTINE ${result.entry.email}: ${reason}`,
+        sponsor: "pomerium",
+        title: "Quarantine policy rewrite",
+        severity: "block",
         detail: {
           tool: "quarantine",
           entry: result.entry,
@@ -106,6 +109,9 @@ export function createShim(opts?: {
         kind: "chat",
         actor: "guardian",
         message: `Quarantined ${result.entry.email}. Even plan_* tools now return 403.`,
+        sponsor: "guardian",
+        title: "Identity quarantined",
+        severity: "block",
         detail: { entry: result.entry },
       });
       res.json({
@@ -161,6 +167,9 @@ export function createShim(opts?: {
           kind: "blocked",
           actor,
           message: `${tool} BLOCKED 403 — ${decision.message}`,
+          sponsor: "pomerium",
+          title: `${tool} BLOCKED`,
+          severity: "block",
           detail: {
             tool,
             code: decision.code,
@@ -181,6 +190,9 @@ export function createShim(opts?: {
             kind: "chat",
             actor: "secgate",
             message: `Identity ${decision.identity?.email} is quarantined — ${tool} blocked.`,
+            sponsor: "pomerium",
+            title: "Quarantined identity 403",
+            severity: "block",
             detail: { tool },
           });
         }
@@ -317,6 +329,9 @@ async function emitAudit(
     actor: string;
     message: string;
     detail?: Record<string, unknown>;
+    sponsor?: string;
+    title?: string;
+    severity?: string;
   }
 ): Promise<void> {
   try {

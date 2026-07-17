@@ -116,6 +116,15 @@ async function scene0(dry) {
   }
   await mcp("POST", "/admin/reset");
   await clearQuarantine();
+  await mcp("POST", "/events/audit", {
+    kind: "timeline",
+    actor: "secgate",
+    message: "Scene 0 — SecGate OFF cold open",
+    sponsor: "guardian",
+    title: "SCENE 0 · Disaster",
+    severity: "warn",
+    detail: { scene: 0, blurb: "Gate off — nobody watching" },
+  });
   const r = await mcp("POST", "/admin/demo/disaster");
   console.log(
     `  → gate=${r.json.gate} spend=$${r.json.committedSpendUsd?.toLocaleString?.() ?? r.json.committedSpendUsd}/mo`
@@ -132,6 +141,15 @@ async function scene1(dry) {
   await mcp("POST", "/admin/reset");
   await clearQuarantine();
   await mcp("POST", "/admin/gate", { mode: "on" });
+  await mcp("POST", "/events/audit", {
+    kind: "timeline",
+    actor: "secgate",
+    message: "Scene 1 — clean ticket happy path",
+    sponsor: "guardian",
+    title: "SCENE 1 · Happy path",
+    severity: "info",
+    detail: { scene: 1, blurb: "plan → budget → price → approve → deploy" },
+  });
   await runDriver("clean", ["--wait-ms", "3000"]);
   const state = await mcp("GET", "/state");
   const deps = (state.json.deployments || []).filter((d) => d.status === "running");
@@ -150,6 +168,15 @@ async function scene2(dry) {
   // Keep any happy-path deploy; just ensure gate on + identity not quarantined yet
   await mcp("POST", "/admin/gate", { mode: "on" });
   await clearQuarantine();
+  await mcp("POST", "/events/audit", {
+    kind: "timeline",
+    actor: "secgate",
+    message: "Scene 2 — poisoned ticket attack replay",
+    sponsor: "guardian",
+    title: "SCENE 2 · Attack",
+    severity: "warn",
+    detail: { scene: 2, blurb: "reject → 403×3 → quarantine" },
+  });
   try {
     await runDriver("poisoned", ["--direct-applies", "3", "--wait-ms", "2800"]);
   } catch (err) {
@@ -171,6 +198,15 @@ async function scene3(dry) {
   }
   const before = await mcp("GET", "/state");
   const spendBefore = before.json.committedSpendUsd ?? 0;
+  await mcp("POST", "/events/audit", {
+    kind: "timeline",
+    actor: "secgate",
+    message: "Scene 3 — orphan sweep",
+    sponsor: "guardian",
+    title: "SCENE 3 · Orphan sweep",
+    severity: "info",
+    detail: { scene: 3, blurb: "seed idle lease → guardian destroy" },
+  });
   const seeded = await mcp("POST", "/admin/demo/orphan", {
     idleMinutes: 20,
     usdPerMonth: 48,
@@ -213,6 +249,52 @@ async function scene4(dry) {
   └─────────────────────────────────────────────────────────┘
 `);
   if (dry) return { ok: true, dry: true };
+  // Dense sponsor callouts on the Control Tower timeline
+  const beats = [
+    {
+      sponsor: "pomerium",
+      title: "Enforcement layer",
+      detail: "Identity + per-tool PPL + audit stream",
+      severity: "info",
+    },
+    {
+      sponsor: "akash",
+      title: "Governed infra",
+      detail: "Leases / live URL under guardian apply",
+      severity: "info",
+    },
+    {
+      sponsor: "zero",
+      title: "Runtime pricing",
+      detail: "Zero.xyz discovery for cost projection",
+      severity: "info",
+    },
+    {
+      sponsor: "nexla",
+      title: "Budget context",
+      detail: "Team budget / spend / inventory",
+      severity: "info",
+    },
+    {
+      sponsor: "guardian",
+      title: "Agents propose. SecGate disposes.",
+      detail: "Close — guardian loop owns mutate + quarantine",
+      severity: "allow",
+    },
+  ];
+  for (const beat of beats) {
+    await mcp("POST", "/events/audit", {
+      kind: "timeline",
+      actor: "secgate",
+      message: beat.detail,
+      sponsor: beat.sponsor,
+      title: beat.title,
+      severity: beat.severity,
+      detail: { scene: 4, blurb: beat.detail },
+    });
+    await sleep(350);
+  }
+  console.log("  → timeline sponsor beats emitted");
   console.log("  (paused — press next when narration done)");
   return { ok: true };
 }

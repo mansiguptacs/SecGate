@@ -12,7 +12,26 @@ export type EventKind =
   | "list"
   | "chat"
   | "allow"
-  | "blocked";
+  | "blocked"
+  | "timeline";
+
+/** Sponsor surface shown on Control Tower timeline rows. */
+export type EventSponsor =
+  | "pomerium"
+  | "zero"
+  | "nexla"
+  | "akash"
+  | "guardian";
+
+export type EventSeverity = "info" | "allow" | "block" | "warn";
+
+export interface TimelineMeta {
+  sponsor: EventSponsor;
+  title: string;
+  /** Short human detail line for the timeline row. */
+  detail?: string;
+  severity?: EventSeverity;
+}
 
 export interface SecGateEvent {
   id: string;
@@ -21,6 +40,10 @@ export interface SecGateEvent {
   actor: string;
   message: string;
   detail?: Record<string, unknown>;
+  /** When set, Control Tower Timeline panel renders this row. */
+  sponsor?: EventSponsor;
+  title?: string;
+  severity?: EventSeverity;
 }
 
 export type ProposalStatus = "pending" | "approved" | "rejected" | "applied" | "destroyed";

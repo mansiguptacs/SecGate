@@ -33,7 +33,8 @@
     "test:phase3": "npm run test:phase3 -w infra-mcp",
     "test:phase4": "npm run test -w guardian -- test/phase4.test.ts",
     "test:nexla": "npm run test -w @secgate/nexla",
-    "test:phase5": "npm run build && npx tsx --test guardian/test/orphan.test.ts && node demo/test-phase5.js"
+    "test:phase5": "npm run build && npx tsx --test guardian/test/orphan.test.ts && node demo/test-phase5.js",
+    "test:timeline": "npm run build -w shared && npm run build -w infra-mcp && node --test demo/test-timeline.js"
   },
   "engines": {
     "node": ">=18"

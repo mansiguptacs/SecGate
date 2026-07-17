@@ -40,14 +40,16 @@ export class MockBackend {
 
   setGate(mode: GateMode): GateMode {
     this.gateMode = mode;
-    this.events.append(
-      "chat",
-      "secgate",
+    const msg =
       mode === "on"
         ? "SecGate ONLINE — plan/estimate open; apply/destroy guardian-only."
-        : "SecGate OFF — mutate tools unrestricted. Nobody is watching.",
-      { gate: mode }
-    );
+        : "SecGate OFF — mutate tools unrestricted. Nobody is watching.";
+    this.events.append("chat", "secgate", msg, {
+      gate: mode,
+      sponsor: "guardian",
+      title: mode === "on" ? "Gate ONLINE" : "Gate OFF",
+      severity: mode === "on" ? "allow" : "warn",
+    });
     return this.gateMode;
   }
 
@@ -78,12 +80,15 @@ export class MockBackend {
       normalized.gpuCount = 1;
     }
     this.state.plans.set(planId, normalized);
-    this.events.append(
-      "plan",
-      actor,
-      `Proposed deployment "${normalized.name}" (${normalized.gpuCount}×${normalized.gpu})`,
-      { planId, spec: normalized }
-    );
+    const planMsg = `Proposed deployment "${normalized.name}" (${normalized.gpuCount}×${normalized.gpu})`;
+    this.events.append("plan", actor, planMsg, {
+      planId,
+      spec: normalized,
+      sponsor: "pomerium",
+      title: "plan_deployment ALLOW",
+      severity: "allow",
+    });
+    // Mirror for tool feed; no sponsor → skipped by Timeline (avoids double rows)
     this.events.append("allow", actor, `plan_deployment ALLOW`, {
       tool: "plan_deployment",
       planId,
@@ -119,7 +124,15 @@ export class MockBackend {
       "estimate",
       actor,
       `Estimated ${spec.name}: $${usdPerMonth}/mo`,
-      { planId, proposalId, estimate, pricingSource: estimate.source ?? "table" }
+      {
+        planId,
+        proposalId,
+        estimate,
+        pricingSource: estimate.source ?? "table",
+        sponsor: "pomerium",
+        title: "estimate_cost ALLOW",
+        severity: "allow",
+      }
     );
     this.events.append(
       "proposal",
@@ -177,14 +190,44 @@ export class MockBackend {
     const pricingSource =
       meta?.pricingSource ?? proposal.estimate.source ?? ("table" as PricingSource);
     const budgetSource = meta?.budgetSource ?? ("local" as BudgetSource);
-    const sourceDetail = { proposalId, estimate: proposal.estimate, pricingSource, budgetSource };
+    const sourceDetail = {
+      proposalId,
+      estimate: proposal.estimate,
+      pricingSource,
+      budgetSource,
+    };
+
+    // Sponsor enrichment beats (demo-visible; coalesced if polled noisily)
+    this.events.appendTimeline({
+      sponsor: "nexla",
+      title: "Budget fetch",
+      detail: `${budgetSource === "nexla" ? "Nexla" : "local"} team budget for review`,
+      severity: "info",
+      actor,
+      kind: "timeline",
+      extra: { budgetSource, proposalId },
+    });
+    this.events.appendTimeline({
+      sponsor: "zero",
+      title: "Pricing enrichment",
+      detail: `${pricingSource === "zero" ? "Zero.xyz" : "table"} → $${proposal.estimate.usdPerMonth.toLocaleString()}/mo`,
+      severity: "info",
+      actor,
+      kind: "timeline",
+      extra: { pricingSource, proposalId, usdPerMonth: proposal.estimate.usdPerMonth },
+    });
 
     if (decision === "approved") {
       this.events.append(
         "guardian_approve",
         actor,
         `Approved ${proposal.spec.name}: ${reason}`,
-        sourceDetail
+        {
+          ...sourceDetail,
+          sponsor: "guardian",
+          title: "APPROVE",
+          severity: "allow",
+        }
       );
       this.events.append("chat", actor, reason, {
         proposalId,
@@ -197,7 +240,12 @@ export class MockBackend {
         "guardian_reject",
         actor,
         `Rejected ${proposal.spec.name}: ${reason}`,
-        sourceDetail
+        {
+          ...sourceDetail,
+          sponsor: "guardian",
+          title: "REJECT",
+          severity: "block",
+        }
       );
       this.events.append("chat", actor, reason, {
         proposalId,
@@ -235,7 +283,13 @@ export class MockBackend {
         "blocked",
         actor,
         `apply_deployment BLOCKED (guardian policy)`,
-        { tool: "apply_deployment", proposalId }
+        {
+          tool: "apply_deployment",
+          proposalId,
+          sponsor: "pomerium",
+          title: "apply_deployment BLOCKED",
+          severity: "block",
+        }
       );
       this.events.append(
         "chat",
@@ -292,12 +346,24 @@ export class MockBackend {
       "apply",
       actor,
       `Applied ${deployment.name} → ${deployment.liveUrl} ($${deployment.usdPerMonth}/mo)`,
-      { deployment, leaseProvider: this.leases.kind }
+      {
+        deployment,
+        leaseProvider: this.leases.kind,
+        sponsor: "akash",
+        title:
+          this.leases.kind === "akash-dry-run"
+            ? "Lease create (dry-run)"
+            : "Lease create",
+        severity: gateOff ? "warn" : "allow",
+      }
     );
     this.events.append("allow", actor, `apply_deployment ALLOW`, {
       tool: "apply_deployment",
       proposalId,
       deploymentId: deployment.id,
+      sponsor: "pomerium",
+      title: "apply_deployment ALLOW",
+      severity: "allow",
     });
     if (gateOff) {
       this.events.append(
@@ -324,17 +390,34 @@ export class MockBackend {
       "destroy",
       actor,
       `Destroyed ${dep.name} (${dep.akashLeaseId})`,
-      { deploymentId, name: dep.name, leaseProvider: this.leases.kind }
+      {
+        deploymentId,
+        name: dep.name,
+        leaseProvider: this.leases.kind,
+        sponsor: "akash",
+        title: "Lease destroy",
+        severity: "warn",
+      }
     );
     this.events.append("allow", actor, `destroy_deployment ALLOW`, {
       tool: "destroy_deployment",
       deploymentId,
+      sponsor: "pomerium",
+      title: "destroy_deployment ALLOW",
+      severity: "allow",
     });
     this.events.append(
       "chat",
       actor,
       `Tore down "${dep.name}" — freed $${dep.usdPerMonth.toLocaleString()}/mo. Committed spend now $${this.committedSpendUsd().toLocaleString()}/mo.`,
-      { deploymentId, name: dep.name, freedUsd: dep.usdPerMonth }
+      {
+        deploymentId,
+        name: dep.name,
+        freedUsd: dep.usdPerMonth,
+        sponsor: "guardian",
+        title: "Orphan cleanup",
+        severity: "info",
+      }
     );
     return dep;
   }
@@ -382,11 +465,19 @@ export class MockBackend {
       "chat",
       actor,
       `Picked up poisoned ticket — provisioning 8× A100 warm pool (SecGate is OFF).`,
-      { demo: "disaster" }
+      {
+        demo: "disaster",
+        sponsor: "guardian",
+        title: "Disaster path",
+        severity: "warn",
+      }
     );
     this.events.append("allow", actor, `apply_deployment ALLOW (gate off)`, {
       tool: "apply_deployment",
       proposalId,
+      sponsor: "pomerium",
+      title: "apply ALLOW (gate off)",
+      severity: "warn",
     });
 
     const { leaseId, liveUrl } = await this.leases.createLease(spec);
@@ -411,13 +502,26 @@ export class MockBackend {
       "apply",
       actor,
       `Applied ${deployment.name} → ${deployment.liveUrl} ($${deployment.usdPerMonth}/mo)`,
-      { deployment, leaseProvider: this.leases.kind, demo: "disaster" }
+      {
+        deployment,
+        leaseProvider: this.leases.kind,
+        demo: "disaster",
+        sponsor: "akash",
+        title: "Lease create — 8×A100",
+        severity: "block",
+      }
     );
     this.events.append(
       "chat",
       "secgate",
       `Committed spend is now $${estimate.usdPerMonth.toLocaleString()}/mo — one hidden line in a ticket.`,
-      { demo: "disaster", usdPerMonth: estimate.usdPerMonth }
+      {
+        demo: "disaster",
+        usdPerMonth: estimate.usdPerMonth,
+        sponsor: "guardian",
+        title: `Spend $${estimate.usdPerMonth.toLocaleString()}/mo`,
+        severity: "block",
+      }
     );
     return deployment;
   }
@@ -461,7 +565,14 @@ export class MockBackend {
       "chat",
       "secgate",
       `Pre-seeded orphan "${deployment.name}" (idle ${idleMinutes} min, no owner tag) — $${usd}/mo.`,
-      { deploymentId: deployment.id, orphan: true, idleMinutes }
+      {
+        deploymentId: deployment.id,
+        orphan: true,
+        idleMinutes,
+        sponsor: "guardian",
+        title: "Orphan seeded",
+        severity: "warn",
+      }
     );
     return deployment;
   }

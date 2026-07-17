@@ -15,6 +15,8 @@
   const policyNote = document.getElementById("policyNote");
   const policyPanel = document.getElementById("policyPanel");
   const flashOverlay = document.getElementById("flashOverlay");
+  const timelineFeed = document.getElementById("timelineFeed");
+  const timelineEmpty = document.getElementById("timelineEmpty");
 
   let seen = new Set();
   let displaySpend = 0;
@@ -24,6 +26,15 @@
   let gateMode = "on";
   let lastSnippet = "";
   let lastQuarantineCount = 0;
+  let timelineCount = 0;
+
+  const SPONSOR_LABEL = {
+    pomerium: "Pomerium",
+    zero: "Zero",
+    nexla: "Nexla",
+    akash: "Akash",
+    guardian: "Guardian",
+  };
 
   function fmt(n) {
     return "$" + Math.round(n).toLocaleString("en-US");
@@ -37,7 +48,6 @@
       animFrame = null;
       return;
     }
-    // Faster ramp for demo wow (disaster spin-up / orphan drop)
     const speed = Math.abs(diff) > 2000 ? 0.28 : Math.abs(diff) > 200 ? 0.22 : 0.18;
     displaySpend += diff * speed;
     spendEl.textContent = fmt(displaySpend);
@@ -213,6 +223,52 @@
     else if (ev.kind === "allow" || ev.kind === "apply") flashScreen("allow");
   }
 
+  function timelineDetail(ev) {
+    if (ev.detail && typeof ev.detail.blurb === "string") return ev.detail.blurb;
+    return ev.message;
+  }
+
+  function addTimeline(ev) {
+    if (!ev.sponsor || !timelineFeed) return;
+    if (seen.has("tl:" + ev.id)) return;
+    seen.add("tl:" + ev.id);
+
+    if (timelineEmpty) timelineEmpty.remove();
+
+    const sev = ev.severity || "info";
+    const row = document.createElement("div");
+    row.className = "tl-row sev-" + sev + " sponsor-" + ev.sponsor;
+    const label = SPONSOR_LABEL[ev.sponsor] || ev.sponsor;
+    const title = ev.title || ev.kind || "event";
+    row.innerHTML =
+      '<div class="tl-sponsor sponsor-' +
+      escapeHtml(ev.sponsor) +
+      '">' +
+      escapeHtml(label) +
+      "</div>" +
+      '<div class="tl-body"><div class="tl-title">' +
+      escapeHtml(title) +
+      '</div><div class="tl-detail">' +
+      escapeHtml(timelineDetail(ev)) +
+      "</div></div>" +
+      '<div class="tl-meta"><div>' +
+      new Date(ev.ts).toLocaleTimeString() +
+      '</div><span class="tl-sev ' +
+      escapeHtml(sev) +
+      '">' +
+      escapeHtml(sev) +
+      "</span></div>";
+
+    timelineFeed.appendChild(row);
+    timelineCount += 1;
+    timelineFeed.scrollTop = timelineFeed.scrollHeight;
+
+    if (sev === "block") flashScreen("block");
+    else if (sev === "allow" && (ev.sponsor === "akash" || ev.kind === "apply")) {
+      flashScreen("allow");
+    }
+  }
+
   function renderDeployments(deps) {
     if (!deps || !deps.length) {
       deployList.innerHTML = '<div class="empty">No running deployments</div>';
@@ -220,10 +276,9 @@
     }
     deployList.innerHTML = deps
       .map((d) => {
-        const orphan =
-          !d.ownerTag
-            ? '<span class="orphan-tag">untagged</span>'
-            : "";
+        const orphan = !d.ownerTag
+          ? '<span class="orphan-tag">untagged</span>'
+          : "";
         return (
           '<div class="dep-card"><div class="name">' +
           escapeHtml(d.name) +
@@ -269,12 +324,14 @@
         else if (data.policy) bits.push("Pomerium policy");
         else bits.push("mock stack");
         if (data.budgetSource) bits.push("budget:" + data.budgetSource);
+        bits.push("timeline:" + timelineCount);
         phaseLabel.textContent = bits.join(" · ");
       }
       const events = data.events || [];
       for (const ev of events) {
         if (ev.kind === "chat") addChat(ev);
         addTool(ev);
+        addTimeline(ev);
         if (ev.detail && ev.detail.pplDiff) {
           if (policyDiff && ev.detail.snippetBefore && ev.detail.snippetAfter) {
             policyDiff.textContent =
@@ -288,7 +345,12 @@
         }
       }
       conn.textContent =
-        "live · " + events.length + " events · " + new Date().toLocaleTimeString();
+        "live · " +
+        events.length +
+        " events · " +
+        timelineCount +
+        " timeline · " +
+        new Date().toLocaleTimeString();
     } catch (err) {
       conn.textContent = "offline · " + err.message;
     }
