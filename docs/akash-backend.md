@@ -47,7 +47,7 @@ npm run test:phase3   # Akash dry-run path
 
 ## Gaps / not in Phase 3
 
-- Zero.xyz live pricing (still table-based; 8×A100 reject unchanged)
-- Nexla budgets (local $500 cap)
+- ~~Zero.xyz live pricing~~ → Phase 4 (`docs/phase4-sponsors.md`)
+- ~~Nexla budgets~~ → Phase 4 (`data/budget.json` fallback)
 - GPU SDLs / marketplace A100 bids (intentionally blocked by guardian before apply)
 - Wallet mnemonic / `akash` CLI path (Console API only for live)

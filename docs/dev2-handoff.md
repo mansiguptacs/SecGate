@@ -114,7 +114,7 @@ curl -s -o /dev/null -w '%{http_code}\n' "$SECGATE/apply_deployment" \
 
 ```bash
 npm install && npm run build
-npm run test:phase1 && npm run test:phase2 && npm run test:phase3
+npm run test:phase1 && npm run test:phase2 && npm run test:phase3 && npm run test:phase4
 npm run start:phase2
 # Control Tower :3100 · Gateway :3200 · BACKEND=mock by default
 
@@ -133,10 +133,28 @@ See **[docs/akash-backend.md](./akash-backend.md)** for the full table. Minimum 
 
 Without the key, `BACKEND=akash` still demos with dry-run URLs.
 
+## Zero.xyz + Nexla (Phase 4)
+
+Full guide: **[docs/phase4-sponsors.md](./phase4-sponsors.md)**.
+
+| Sponsor | Required on Laptop B | Fallback if missing |
+|---------|----------------------|---------------------|
+| **Zero.xyz** | `npm i -g @zeroxyz/cli && zero init && zero auth login` → `~/.zero` | Static GPU price table |
+| **Nexla** | `NEXLA_MCP_URL` + `NEXLA_SERVICE_KEY` (tool `get_team_budget`) | `data/budget.json` ($500) |
+
+```bash
+# Nexla (when ToolSet MCP is ready)
+export NEXLA_MCP_URL="https://api-genai.nexla.io/mcp/service_key/<server_key>"
+export NEXLA_SERVICE_KEY="nxl_sk_...."
+# then: npm run start:phase2
+```
+
+Control Tower chat bubbles show **Zero/table** and **Nexla/local** source badges on guardian verdicts.
+
 ## Sponsor onboarding (unchanged)
 
 1. **Akash** — Console + credits; hand **`AKASH_API_KEY`** (Console API key) to Dev 1  
-2. **Zero.xyz** — auth on **Laptop B** (`zero init`)  
+2. **Zero.xyz** — auth on **Laptop B** (`zero init` / `zero auth login`)  
 3. **Nexla** — budget ToolSet MCP URL + key (or keep local JSON)
 
 ## Sync points

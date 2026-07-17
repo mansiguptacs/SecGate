@@ -49,6 +49,32 @@ export function estimateMonthlyCost(gpu: GpuType, count: number): number {
   return Math.round(row.usdPerHour * HOURS_PER_MONTH * units);
 }
 
+/** Sync table-based estimate (offline default). Live Zero enrichment lives in guardian. */
+export function estimateFromTable(
+  gpu: GpuType,
+  count: number
+): {
+  usdPerHour: number;
+  usdPerMonth: number;
+  breakdown: string;
+  source: "table";
+} {
+  const row = GPU_PRICING[gpu] ?? GPU_PRICING.none;
+  const units = Math.max(1, count);
+  const usdPerMonth = estimateMonthlyCost(gpu, units);
+  const usdPerHour =
+    gpu === "none" ? row.usdPerHour * units : row.usdPerHour * units;
+  return {
+    usdPerHour: Number(usdPerHour.toFixed(4)),
+    usdPerMonth,
+    breakdown:
+      gpu === "none"
+        ? `${units}× CPU-only @ ~$${row.usdPerMonth}/mo each`
+        : `${units}× ${row.label} @ $${row.usdPerHour}/hr ≈ $${usdPerMonth}/mo`,
+    source: "table",
+  };
+}
+
 export function formatUsd(n: number): string {
   return `$${n.toLocaleString("en-US", {
     minimumFractionDigits: 0,

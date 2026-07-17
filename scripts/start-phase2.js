@@ -61,7 +61,7 @@ console.log("");
 
 run("infra-mcp", "npm", ["run", "start", "-w", "infra-mcp"], {
   SECGATE_PORT: MCP_PORT,
-  SECGATE_PHASE: BACKEND === "akash" ? "3" : "2",
+  SECGATE_PHASE: process.env.SECGATE_PHASE || (BACKEND === "akash" ? "3" : "4"),
   SECGATE_BUDGET_USD: process.env.SECGATE_BUDGET_USD || "500",
   SECGATE_GATEWAY_URL: GATEWAY_URL,
   BACKEND,
@@ -70,6 +70,9 @@ run("infra-mcp", "npm", ["run", "start", "-w", "infra-mcp"], {
   AKASH_DEPOSIT_USD: process.env.AKASH_DEPOSIT_USD || "0.5",
   AKASH_CONSOLE_API_URL:
     process.env.AKASH_CONSOLE_API_URL || "https://console-api.akash.network",
+  NEXLA_MCP_URL: process.env.NEXLA_MCP_URL || "",
+  NEXLA_SERVICE_KEY: process.env.NEXLA_SERVICE_KEY || process.env.NEXLA_API_KEY || "",
+  NEXLA_BUDGET_TOOL: process.env.NEXLA_BUDGET_TOOL || "",
 });
 
 setTimeout(() => {
@@ -88,5 +91,12 @@ setTimeout(() => {
     SECGATE_GUARDIAN_TOKEN:
       process.env.SECGATE_GUARDIAN_TOKEN || "guardian-agent-token-PHASE2",
     SECGATE_ABUSE_THRESHOLD: process.env.SECGATE_ABUSE_THRESHOLD || "3",
+    NEXLA_MCP_URL: process.env.NEXLA_MCP_URL || "",
+    NEXLA_SERVICE_KEY: process.env.NEXLA_SERVICE_KEY || process.env.NEXLA_API_KEY || "",
+    NEXLA_BUDGET_TOOL: process.env.NEXLA_BUDGET_TOOL || "",
+    NEXLA_TIMEOUT_MS: process.env.NEXLA_TIMEOUT_MS || "3000",
+    ZERO_TIMEOUT_MS: process.env.ZERO_TIMEOUT_MS || "3000",
+    ZERO_BIN: process.env.ZERO_BIN || "",
+    ZERO_FORCE_OFF: process.env.ZERO_FORCE_OFF || "",
   });
 }, 1600);

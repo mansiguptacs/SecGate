@@ -34,10 +34,22 @@ export interface DeploymentSpec {
   tags?: Record<string, string>;
 }
 
+export type PricingSource = "zero" | "table";
+export type BudgetSource = "nexla" | "local";
+
 export interface CostEstimate {
   usdPerHour: number;
   usdPerMonth: number;
   breakdown: string;
+  /** Where unit rates came from (Zero.xyz vs static table). */
+  source?: PricingSource;
+}
+
+export interface TeamBudget {
+  team: string;
+  monthlyBudgetUsd: number;
+  spentUsd: number;
+  source: BudgetSource;
 }
 
 export interface Proposal {
@@ -70,4 +82,14 @@ export interface Deployment {
 export interface BudgetConfig {
   monthlyBudgetUsd: number;
   team: string;
+}
+
+export interface PriceQuote {
+  gpu: string;
+  gpuCount: number;
+  usdPerHour: number;
+  usdPerMonth: number;
+  breakdown: string;
+  source: PricingSource;
+  cached?: boolean;
 }

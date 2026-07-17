@@ -6,6 +6,18 @@ Zero-trust guardrail for infra agents: every infra change is cost-estimated and 
 
 See [PLAN.md](./PLAN.md) for the full architecture and demo story.
 
+## Phase 4 status (Zero + Nexla)
+
+Guardian enriches decisions with **Zero.xyz** pricing and **Nexla** budget/spend when configured. Offline defaults remain the static price table + `data/budget.json` ($500). Timeouts ≤3s → fallback. Control Tower shows **Zero/table** and **Nexla/local** badges on verdict chats.
+
+```bash
+npm run test:phase4
+# Zero:   zero init && zero auth login   (on Laptop B)
+# Nexla:  export NEXLA_MCP_URL=... NEXLA_SERVICE_KEY=...
+```
+
+Details: [docs/phase4-sponsors.md](./docs/phase4-sponsors.md).
+
 ## Phase 3 status (Akash backend)
 
 Default remains **`BACKEND=mock`**. Set **`BACKEND=akash`** for the Akash lease path:
@@ -62,6 +74,7 @@ npm run build
 npm run test:phase1          # mock backend
 npm run test:phase2          # Pomerium shim
 npm run test:phase3          # Akash dry-run backend
+npm run test:phase4          # Zero + Nexla adapters / fallbacks
 npm run start:phase2         # API + Pomerium shim + guardian (BACKEND=mock)
 # BACKEND=akash npm run start:phase3   # Akash dry-run or live if AKASH_API_KEY set
 ```
@@ -131,18 +144,19 @@ SecGate/
   guardian/     # budget policy loop + quarantine
   dashboard/    # Control Tower static UI
   data/         # events.json (runtime)
-  docs/         # Dev 2 handoff + Akash env
+  docs/         # Dev 2 handoff + Akash + Phase 4 sponsors
 ```
 
 ## Developer 2
 
-See **[docs/dev2-handoff.md](./docs/dev2-handoff.md)** for tokens, tunnel options (`pom.run` / cloudflared / ngrok), and smoke tests.
+See **[docs/dev2-handoff.md](./docs/dev2-handoff.md)** for tokens, tunnel options (`pom.run` / cloudflared / ngrok), and smoke tests.  
+Sponsor wiring: **[docs/phase4-sponsors.md](./docs/phase4-sponsors.md)** · **[docs/akash-backend.md](./docs/akash-backend.md)**.
 
-## Next (Phase 4)
+## Next (Phase 5)
 
-1. Zero.xyz live pricing (`zero search` / `zero fetch`)  
-2. Nexla budget/spend MCP tools  
-3. Optional: replace policy shim with real Pomerium MCP + IdP  
+1. Demo polish: tickets, demo-director keypress scenes, orphan sweep  
+2. Control Tower “wow” (spend counter, quarantine PPL animation)  
+3. Optional: real Pomerium MCP + IdP  
 
 ## License
 

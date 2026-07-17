@@ -1,6 +1,7 @@
 import path from "path";
 import express from "express";
 import cors from "cors";
+import fs from "fs";
 import { EventStore } from "./events";
 import { MockBackend } from "./mock-backend";
 import { invokeTool, TOOL_NAMES, type ToolName } from "./tools";
@@ -11,14 +12,51 @@ import {
   type BackendMode,
 } from "./backend-factory";
 import type { AkashClientConfig } from "./akash-client";
+import type { CostEstimate, BudgetSource, PricingSource } from "@secgate/shared";
 
 const PORT = Number(process.env.SECGATE_PORT ?? 3100);
-const BUDGET = Number(process.env.SECGATE_BUDGET_USD ?? 500);
 const DATA_DIR = process.env.SECGATE_DATA_DIR
   ? path.resolve(process.env.SECGATE_DATA_DIR)
   : path.resolve(__dirname, "../../data");
 const EVENTS_FILE = path.join(DATA_DIR, "events.json");
+const BUDGET_FILE = process.env.SECGATE_BUDGET_FILE
+  ? path.resolve(process.env.SECGATE_BUDGET_FILE)
+  : path.join(DATA_DIR, "budget.json");
 const DASHBOARD_DIR = path.resolve(__dirname, "../../dashboard");
+
+function loadBudgetSnapshot(): {
+  budgetUsd: number;
+  spentUsd: number;
+  team: string;
+  budgetSource: BudgetSource;
+} {
+  const envCap = Number(process.env.SECGATE_BUDGET_USD ?? 500);
+  try {
+    if (fs.existsSync(BUDGET_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(BUDGET_FILE, "utf8")) as Record<
+        string,
+        unknown
+      >;
+      return {
+        budgetUsd: Number(raw.monthly_budget_usd ?? raw.monthlyBudgetUsd ?? envCap),
+        spentUsd: Number(raw.spent_usd ?? raw.spentUsd ?? 0),
+        team: String(raw.team ?? "platform-eng"),
+        budgetSource: "local",
+      };
+    }
+  } catch {
+    /* ignore */
+  }
+  return {
+    budgetUsd: envCap,
+    spentUsd: 0,
+    team: "platform-eng",
+    budgetSource: "local",
+  };
+}
+
+const BUDGET_SNAP = loadBudgetSnapshot();
+const BUDGET = BUDGET_SNAP.budgetUsd;
 
 export function createApp(opts?: {
   eventsFile?: string;
@@ -45,12 +83,15 @@ export function createApp(opts?: {
   app.use(express.json());
 
   app.get("/health", (_req, res) => {
+    const snap = loadBudgetSnapshot();
     res.json({
       ok: true,
       phase: Number(process.env.SECGATE_PHASE ?? 1),
       transport: "http-json-shim",
       tools: TOOL_NAMES,
-      budgetUsd: BUDGET,
+      budgetUsd: snap.budgetUsd,
+      budgetSource: snap.budgetSource,
+      team: snap.team,
       backend: backendMode,
       leaseProvider: leaseKind,
       backendLabel: describeBackend(bundle),
@@ -162,7 +203,9 @@ export function createApp(opts?: {
     res.json({
       events: events.list(since),
       committedSpendUsd: backend.committedSpendUsd(),
-      budgetUsd: BUDGET,
+      budgetUsd: loadBudgetSnapshot().budgetUsd,
+      budgetSource: loadBudgetSnapshot().budgetSource,
+      pricingSourceDefault: "table" as PricingSource,
       deployments: backend.listDeployments().filter((d) => d.status === "running"),
       policy,
       phase: Number(process.env.SECGATE_PHASE ?? 1),
@@ -188,7 +231,21 @@ export function createApp(opts?: {
       return;
     }
     try {
-      const proposal = backend.decideProposal(req.params.id, decision, reason, actor);
+      const meta =
+        req.body?.estimate || req.body?.pricingSource || req.body?.budgetSource
+          ? {
+              estimate: req.body?.estimate as CostEstimate | undefined,
+              pricingSource: req.body?.pricingSource as PricingSource | undefined,
+              budgetSource: req.body?.budgetSource as BudgetSource | undefined,
+            }
+          : undefined;
+      const proposal = backend.decideProposal(
+        req.params.id,
+        decision,
+        reason,
+        actor,
+        meta
+      );
       res.json({ ok: true, proposal });
     } catch (err) {
       res.status(400).json({ ok: false, error: (err as Error).message });
@@ -196,8 +253,12 @@ export function createApp(opts?: {
   });
 
   app.get("/state", (_req, res) => {
+    const snap = loadBudgetSnapshot();
     res.json({
-      budgetUsd: BUDGET,
+      budgetUsd: snap.budgetUsd,
+      budgetSource: snap.budgetSource,
+      team: snap.team,
+      spentUsd: snap.spentUsd,
       committedSpendUsd: backend.committedSpendUsd(),
       proposals: backend.listProposals(),
       deployments: backend.listDeployments(),

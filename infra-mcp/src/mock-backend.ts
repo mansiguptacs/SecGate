@@ -1,12 +1,13 @@
 import { v4 as uuid } from "uuid";
 import {
-  estimateMonthlyCost,
-  GPU_PRICING,
+  estimateFromTable,
   type CostEstimate,
   type Deployment,
   type DeploymentSpec,
   type GpuType,
   type Proposal,
+  type BudgetSource,
+  type PricingSource,
 } from "@secgate/shared";
 import { EventStore } from "./events";
 import { MockLeaseProvider, type LeaseProvider } from "./lease-provider";
@@ -80,20 +81,9 @@ export class MockBackend {
     if (!spec) {
       throw new Error(`Unknown planId: ${planId}`);
     }
-    const row = GPU_PRICING[spec.gpu] ?? GPU_PRICING.none;
-    const usdPerMonth = estimateMonthlyCost(spec.gpu, spec.gpuCount);
-    const usdPerHour =
-      spec.gpu === "none"
-        ? row.usdPerHour * Math.max(1, spec.gpuCount)
-        : row.usdPerHour * spec.gpuCount;
-    const estimate: CostEstimate = {
-      usdPerHour: Number(usdPerHour.toFixed(4)),
-      usdPerMonth,
-      breakdown:
-        spec.gpu === "none"
-          ? `${spec.gpuCount}× CPU-only @ ~$${row.usdPerMonth}/mo each`
-          : `${spec.gpuCount}× ${row.label} @ $${row.usdPerHour}/hr ≈ $${usdPerMonth}/mo`,
-    };
+    // Offline-safe table estimate; guardian may enrich via Zero before decide.
+    const estimate: CostEstimate = estimateFromTable(spec.gpu, spec.gpuCount);
+    const usdPerMonth = estimate.usdPerMonth;
 
     const proposalId = `prop-${uuid().slice(0, 8)}`;
     const proposal: Proposal = {
@@ -111,7 +101,7 @@ export class MockBackend {
       "estimate",
       actor,
       `Estimated ${spec.name}: $${usdPerMonth}/mo`,
-      { planId, proposalId, estimate }
+      { planId, proposalId, estimate, pricingSource: estimate.source ?? "table" }
     );
     this.events.append(
       "proposal",
@@ -127,7 +117,7 @@ export class MockBackend {
       "chat",
       actor,
       `I'd like to deploy "${spec.name}" — estimated $${usdPerMonth.toLocaleString()}/mo.`,
-      { proposalId }
+      { proposalId, pricingSource: estimate.source ?? "table" }
     );
 
     return { planId, estimate, proposalId };
@@ -147,33 +137,56 @@ export class MockBackend {
     proposalId: string,
     decision: "approved" | "rejected",
     reason: string,
-    actor = "guardian"
+    actor = "guardian",
+    meta?: {
+      estimate?: CostEstimate;
+      pricingSource?: PricingSource;
+      budgetSource?: BudgetSource;
+    }
   ): Proposal {
     const proposal = this.state.proposals.get(proposalId);
     if (!proposal) throw new Error(`Unknown proposal: ${proposalId}`);
     if (proposal.status !== "pending") {
       throw new Error(`Proposal ${proposalId} already ${proposal.status}`);
     }
+    if (meta?.estimate) {
+      proposal.estimate = meta.estimate;
+    }
     proposal.status = decision;
     proposal.decidedAt = new Date().toISOString();
     proposal.decisionReason = reason;
+
+    const pricingSource =
+      meta?.pricingSource ?? proposal.estimate.source ?? ("table" as PricingSource);
+    const budgetSource = meta?.budgetSource ?? ("local" as BudgetSource);
+    const sourceDetail = { proposalId, estimate: proposal.estimate, pricingSource, budgetSource };
 
     if (decision === "approved") {
       this.events.append(
         "guardian_approve",
         actor,
         `Approved ${proposal.spec.name}: ${reason}`,
-        { proposalId, estimate: proposal.estimate }
+        sourceDetail
       );
-      this.events.append("chat", actor, reason, { proposalId, verdict: "ALLOW" });
+      this.events.append("chat", actor, reason, {
+        proposalId,
+        verdict: "ALLOW",
+        pricingSource,
+        budgetSource,
+      });
     } else {
       this.events.append(
         "guardian_reject",
         actor,
         `Rejected ${proposal.spec.name}: ${reason}`,
-        { proposalId, estimate: proposal.estimate }
+        sourceDetail
       );
-      this.events.append("chat", actor, reason, { proposalId, verdict: "BLOCK" });
+      this.events.append("chat", actor, reason, {
+        proposalId,
+        verdict: "BLOCK",
+        pricingSource,
+        budgetSource,
+      });
     }
     return proposal;
   }

@@ -79,10 +79,35 @@
     seen.add("chat:" + ev.id);
     const div = document.createElement("div");
     div.className = "bubble " + actorClass(ev.actor);
+    const badges = [];
+    if (ev.detail && ev.detail.pricingSource) {
+      const p = ev.detail.pricingSource === "zero" ? "Zero" : "table";
+      badges.push(
+        '<span class="src-badge' +
+          (ev.detail.pricingSource === "zero" ? " live" : "") +
+          '" title="Pricing source">' +
+          escapeHtml(p) +
+          "</span>"
+      );
+    }
+    if (ev.detail && ev.detail.budgetSource) {
+      const b = ev.detail.budgetSource === "nexla" ? "Nexla" : "local";
+      badges.push(
+        '<span class="src-badge' +
+          (ev.detail.budgetSource === "nexla" ? " live" : "") +
+          '" title="Budget source">' +
+          escapeHtml(b) +
+          "</span>"
+      );
+    }
+    const badgeHtml = badges.length
+      ? '<div class="src-row">' + badges.join("") + "</div>"
+      : "";
     div.innerHTML =
       '<div class="who">' +
       escapeHtml(ev.actor) +
       "</div>" +
+      badgeHtml +
       "<div>" +
       escapeHtml(ev.message) +
       "</div>";
@@ -159,8 +184,11 @@
       renderDeployments(data.deployments || []);
       renderPolicy(data.policy);
       if (phaseLabel) {
-        phaseLabel.textContent =
-          "Phase " + (data.phase || 1) + (data.policy ? " · Pomerium policy" : " mock stack");
+        const bits = ["Phase " + (data.phase || 1)];
+        if (data.policy) bits.push("Pomerium policy");
+        else bits.push("mock stack");
+        if (data.budgetSource) bits.push("budget:" + data.budgetSource);
+        phaseLabel.textContent = bits.join(" · ");
       }
       const events = data.events || [];
       for (const ev of events) {

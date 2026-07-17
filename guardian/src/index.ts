@@ -1,6 +1,14 @@
-import type { Proposal, SecGateEvent } from "@secgate/shared";
+import type { CostEstimate, Proposal, SecGateEvent } from "@secgate/shared";
 import { evaluateProposal } from "./policy";
 import { AbuseTracker } from "./abuse";
+import {
+  getPriceQuote,
+  type PricingProviderDeps,
+} from "./pricing-provider";
+import {
+  getTeamBudget,
+  type BudgetProviderDeps,
+} from "./budget-provider";
 
 const MCP_URL = process.env.SECGATE_MCP_URL ?? "http://localhost:3100";
 const BUDGET = Number(process.env.SECGATE_BUDGET_USD ?? 500);
@@ -22,10 +30,17 @@ interface ProposalsResponse {
 
 interface StateResponse {
   committedSpendUsd: number;
+  budgetUsd?: number;
+  spentUsd?: number;
 }
 
 interface EventsResponse {
   events: SecGateEvent[];
+}
+
+export interface GuardianAdapters {
+  pricing?: PricingProviderDeps;
+  budget?: BudgetProviderDeps;
 }
 
 function toolBase(): string {
@@ -53,34 +68,84 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+function sourceSuffix(pricingSource: string, budgetSource: string): string {
+  const p = pricingSource === "zero" ? "Zero" : "table";
+  const b = budgetSource === "nexla" ? "Nexla" : "local";
+  return ` [pricing:${p} · budget:${b}]`;
+}
+
 export async function processPendingOnce(
   baseUrl = MCP_URL,
   budgetUsd = BUDGET,
   autoApply = AUTO_APPLY,
-  gwUrl = gatewayUrl()
-): Promise<{ reviewed: number; approved: number; rejected: number }> {
+  gwUrl = gatewayUrl(),
+  adapters: GuardianAdapters = {}
+): Promise<{
+  reviewed: number;
+  approved: number;
+  rejected: number;
+  lastPricingSource?: string;
+  lastBudgetSource?: string;
+}> {
   const { proposals } = await fetchJson<ProposalsResponse>(
     `${baseUrl}/proposals?status=pending`
   );
   const state = await fetchJson<StateResponse>(`${baseUrl}/state`);
+  const teamBudget = await getTeamBudget(adapters.budget);
+  const effectiveBudget = teamBudget.monthlyBudgetUsd || budgetUsd;
   let approved = 0;
   let rejected = 0;
+  let lastPricingSource: string | undefined;
+  let lastBudgetSource: string | undefined = teamBudget.source;
   const applyBase = gwUrl || baseUrl;
 
   for (const proposal of proposals) {
-    const verdict = evaluateProposal(proposal, {
-      monthlyBudgetUsd: budgetUsd,
-      committedSpendUsd: state.committedSpendUsd,
+    const quote = await getPriceQuote(
+      proposal.spec.gpu,
+      proposal.spec.gpuCount,
+      adapters.pricing
+    );
+    lastPricingSource = quote.source;
+
+    const estimate: CostEstimate = {
+      usdPerHour: quote.usdPerHour,
+      usdPerMonth: quote.usdPerMonth,
+      breakdown: quote.breakdown,
+      source: quote.source,
+    };
+
+    const enriched: Proposal = {
+      ...proposal,
+      estimate,
+    };
+
+    const committed = Math.max(
+      state.committedSpendUsd ?? 0,
+      teamBudget.spentUsd ?? 0
+    );
+
+    const verdict = evaluateProposal(enriched, {
+      monthlyBudgetUsd: effectiveBudget,
+      committedSpendUsd: committed,
     });
+
+    const reason =
+      verdict.reason + sourceSuffix(quote.source, teamBudget.source);
 
     await fetchJson(`${baseUrl}/proposals/${proposal.id}/decide`, {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify(verdict),
+      body: JSON.stringify({
+        decision: verdict.decision,
+        reason,
+        estimate,
+        pricingSource: quote.source,
+        budgetSource: teamBudget.source,
+      }),
     });
 
     console.log(
-      `[guardian] ${verdict.decision.toUpperCase()} ${proposal.id} (${proposal.spec.name}): ${verdict.reason}`
+      `[guardian] ${verdict.decision.toUpperCase()} ${proposal.id} (${proposal.spec.name}): ${reason}`
     );
 
     if (verdict.decision === "approved") {
@@ -102,7 +167,13 @@ export async function processPendingOnce(
     }
   }
 
-  return { reviewed: proposals.length, approved, rejected };
+  return {
+    reviewed: proposals.length,
+    approved,
+    rejected,
+    lastPricingSource,
+    lastBudgetSource,
+  };
 }
 
 export async function quarantineIdentity(
@@ -169,8 +240,9 @@ export async function processAbuseOnce(
 async function loop(): Promise<void> {
   const tracker = new AbuseTracker({ threshold: ABUSE_THRESHOLD });
   const seenIds = new Set<string>();
+  const budget = await getTeamBudget();
   console.log(
-    `[guardian] watching mcp=${MCP_URL} gateway=${gatewayUrl() || "(none)"} budget=$${BUDGET}/mo poll=${POLL_MS}ms abuse_threshold=${ABUSE_THRESHOLD}`
+    `[guardian] watching mcp=${MCP_URL} gateway=${gatewayUrl() || "(none)"} budget=$${budget.monthlyBudgetUsd}/mo (${budget.source}) poll=${POLL_MS}ms abuse_threshold=${ABUSE_THRESHOLD}`
   );
   for (;;) {
     try {
@@ -192,3 +264,5 @@ if (require.main === module) {
 
 export { evaluateProposal, AbuseTracker };
 export { toolBase, authHeaders };
+export { getPriceQuote, tableQuote, clearPricingCache, parseHourlyFromZeroOutput } from "./pricing-provider";
+export { getTeamBudget, loadLocalBudget, fetchNexlaBudget } from "./budget-provider";

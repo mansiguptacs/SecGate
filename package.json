@@ -21,7 +21,8 @@
     "test": "npm run test -w infra-mcp && npm run test -w guardian && npm run test -w @secgate/pomerium",
     "test:phase1": "npm run test:phase1 -w infra-mcp && npm run test -w guardian",
     "test:phase2": "npm run test -w @secgate/pomerium",
-    "test:phase3": "npm run test:phase3 -w infra-mcp"
+    "test:phase3": "npm run test:phase3 -w infra-mcp",
+    "test:phase4": "npm run test -w guardian -- test/phase4.test.ts"
   },
   "engines": {
     "node": ">=18"
