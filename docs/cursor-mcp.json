@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://sites-jersey-baking-temporary.trycloudflare.com",
+      "url": "https://delays-era-replace-lightning.trycloudflare.com",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"

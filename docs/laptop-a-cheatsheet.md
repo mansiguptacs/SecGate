@@ -19,7 +19,7 @@ Settings → MCP → Add server (or merge into your Cursor MCP config):
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://sites-jersey-baking-temporary.trycloudflare.com",
+      "url": "https://delays-era-replace-lightning.trycloudflare.com",
       "transport": "streamable-http",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
@@ -66,7 +66,7 @@ Watch Laptop B’s **Control Tower**: http://localhost:3100/ (on their screen) f
 
 | Item | Value |
 |------|-------|
-| Gateway tunnel | `https://sites-jersey-baking-temporary.trycloudflare.com` |
+| Gateway tunnel | `https://delays-era-replace-lightning.trycloudflare.com` |
 | Dev token | `Bearer dev-agent-token-PHASE2` |
-| Budget tunnel (optional) | `https://understanding-stripes-timer-pupils.trycloudflare.com` |
+| Budget tunnel (optional) | `https://draft-sao-cpu-deeper.trycloudflare.com` |
 | Control Tower (Laptop B only) | `http://localhost:3100/` |
