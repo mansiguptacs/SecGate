@@ -4,6 +4,13 @@ import cors from "cors";
 import { EventStore } from "./events";
 import { MockBackend } from "./mock-backend";
 import { invokeTool, TOOL_NAMES, type ToolName } from "./tools";
+import {
+  createBackend,
+  describeBackend,
+  resolveBackendMode,
+  type BackendMode,
+} from "./backend-factory";
+import type { AkashClientConfig } from "./akash-client";
 
 const PORT = Number(process.env.SECGATE_PORT ?? 3100);
 const BUDGET = Number(process.env.SECGATE_BUDGET_USD ?? 500);
@@ -16,13 +23,21 @@ const DASHBOARD_DIR = path.resolve(__dirname, "../../dashboard");
 export function createApp(opts?: {
   eventsFile?: string;
   resetOnStart?: boolean;
+  backendMode?: BackendMode;
+  akash?: AkashClientConfig;
 }): {
   app: express.Express;
   backend: MockBackend;
   events: EventStore;
+  backendMode: BackendMode;
+  leaseKind: string;
 } {
   const events = new EventStore(opts?.eventsFile ?? EVENTS_FILE);
-  const backend = new MockBackend(events);
+  const bundle = createBackend(events, {
+    mode: opts?.backendMode,
+    akash: opts?.akash,
+  });
+  const { backend, mode: backendMode, leaseKind } = bundle;
   if (opts?.resetOnStart) backend.reset();
 
   const app = express();
@@ -36,6 +51,9 @@ export function createApp(opts?: {
       transport: "http-json-shim",
       tools: TOOL_NAMES,
       budgetUsd: BUDGET,
+      backend: backendMode,
+      leaseProvider: leaseKind,
+      backendLabel: describeBackend(bundle),
     });
   });
 
@@ -84,10 +102,12 @@ export function createApp(opts?: {
         description: toolDescription(name),
       })),
       note: "Phase 1 temporary HTTP JSON API. MCP streamable HTTP via Pomerium in Phase 2.",
+      backend: backendMode,
+      leaseProvider: leaseKind,
     });
   });
 
-  app.post("/tools/:name", (req, res) => {
+  app.post("/tools/:name", async (req, res) => {
     const name = req.params.name as ToolName;
     if (!TOOL_NAMES.includes(name)) {
       res.status(404).json({ error: `Unknown tool: ${name}` });
@@ -95,7 +115,7 @@ export function createApp(opts?: {
     }
     const actor = String(req.header("x-secgate-actor") ?? req.body?.actor ?? "dev-agent");
     try {
-      const result = invokeTool(backend, {
+      const result = await invokeTool(backend, {
         name,
         arguments: req.body?.arguments ?? req.body ?? {},
         actor,
@@ -113,10 +133,10 @@ export function createApp(opts?: {
   app.post("/estimate_cost", (req, res) => forward(req, res, "estimate_cost"));
   app.post("/apply_deployment", (req, res) => forward(req, res, "apply_deployment"));
   app.post("/destroy_deployment", (req, res) => forward(req, res, "destroy_deployment"));
-  app.get("/list_deployments", (req, res) => {
+  app.get("/list_deployments", async (req, res) => {
     const actor = String(req.header("x-secgate-actor") ?? "dev-agent");
     try {
-      const result = invokeTool(backend, {
+      const result = await invokeTool(backend, {
         name: "list_deployments",
         arguments: {},
         actor,
@@ -146,6 +166,8 @@ export function createApp(opts?: {
       deployments: backend.listDeployments().filter((d) => d.status === "running"),
       policy,
       phase: Number(process.env.SECGATE_PHASE ?? 1),
+      backend: backendMode,
+      leaseProvider: leaseKind,
     });
   });
 
@@ -179,6 +201,8 @@ export function createApp(opts?: {
       committedSpendUsd: backend.committedSpendUsd(),
       proposals: backend.listProposals(),
       deployments: backend.listDeployments(),
+      backend: backendMode,
+      leaseProvider: leaseKind,
     });
   });
 
@@ -189,14 +213,14 @@ export function createApp(opts?: {
 
   app.use(express.static(DASHBOARD_DIR));
 
-  function forward(
+  async function forward(
     req: express.Request,
     res: express.Response,
     name: ToolName
-  ): void {
+  ): Promise<void> {
     const actor = String(req.header("x-secgate-actor") ?? req.body?.actor ?? "dev-agent");
     try {
-      const result = invokeTool(backend, {
+      const result = await invokeTool(backend, {
         name,
         arguments: req.body?.arguments ?? req.body ?? {},
         actor,
@@ -209,7 +233,7 @@ export function createApp(opts?: {
     }
   }
 
-  return { app, backend, events };
+  return { app, backend, events, backendMode, leaseKind };
 }
 
 function toolDescription(name: ToolName): string {
@@ -228,16 +252,26 @@ function toolDescription(name: ToolName): string {
 }
 
 export function startServer(): void {
-  const { app } = createApp({ resetOnStart: process.env.SECGATE_RESET === "1" });
+  const { app, backendMode, leaseKind } = createApp({
+    resetOnStart: process.env.SECGATE_RESET === "1",
+  });
   app.listen(PORT, () => {
-    console.log(`[infra-mcp] Phase 1 HTTP shim on http://localhost:${PORT}`);
+    console.log(`[infra-mcp] Phase ${process.env.SECGATE_PHASE ?? 1} HTTP shim on http://localhost:${PORT}`);
+    console.log(`[infra-mcp] Backend:  ${backendMode} (${leaseKind}) — set BACKEND=akash to enable Akash path`);
     console.log(`[infra-mcp] Dashboard: http://localhost:${PORT}/`);
     console.log(`[infra-mcp] Tools:     http://localhost:${PORT}/tools`);
     console.log(`[infra-mcp] Events:    http://localhost:${PORT}/events`);
     console.log(`[infra-mcp] Budget:    $${BUDGET}/mo`);
+    if (backendMode === "akash" && leaseKind === "akash-dry-run") {
+      console.log(
+        `[infra-mcp] Akash dry-run: no AKASH_API_KEY — leases return realistic demo URLs`
+      );
+    }
   });
 }
 
 if (require.main === module) {
   startServer();
 }
+
+export { resolveBackendMode };

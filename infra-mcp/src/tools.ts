@@ -22,7 +22,10 @@ export interface ToolCall {
   actor?: string;
 }
 
-export function invokeTool(backend: MockBackend, call: ToolCall): unknown {
+export async function invokeTool(
+  backend: MockBackend,
+  call: ToolCall
+): Promise<unknown> {
   const actor = call.actor ?? "dev-agent";
   switch (call.name) {
     case "plan_deployment": {

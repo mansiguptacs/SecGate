@@ -41,6 +41,7 @@ console.log("");
 run("infra-mcp", "npm", ["run", "start", "-w", "infra-mcp"], {
   SECGATE_PORT: process.env.SECGATE_PORT || "3100",
   SECGATE_BUDGET_USD: process.env.SECGATE_BUDGET_USD || "500",
+  BACKEND: process.env.BACKEND || process.env.SECGATE_BACKEND || "mock",
 });
 
 setTimeout(() => {

@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "tsx src/server.ts",
-    "test": "tsx --test test/*.test.ts"
+    "test": "tsx --test test/*.test.ts",
+    "test:phase1": "tsx --test test/phase1.test.ts",
+    "test:phase3": "tsx --test test/phase3.test.ts"
   },
   "dependencies": {
     "@secgate/shared": "*",

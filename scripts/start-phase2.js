@@ -46,9 +46,13 @@ function shutdown() {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-console.log("Starting SecGate Phase 2…");
+const BACKEND = (process.env.BACKEND || process.env.SECGATE_BACKEND || "mock").toLowerCase();
+const phaseLabel = BACKEND === "akash" ? "Phase 3 (Akash backend)" : "Phase 2";
+
+console.log("Starting SecGate " + phaseLabel + "…");
 console.log("  Control Tower → http://localhost:" + MCP_PORT + "/");
 console.log("  Pomerium shim → http://localhost:" + GATEWAY_PORT + "/  (Laptop A / agents)");
+console.log("  Backend:        " + BACKEND + (BACKEND === "akash" ? " (set AKASH_API_KEY for live leases)" : " — default; BACKEND=akash to swap)"));
 console.log("  Label: Pomerium policy shim — swap for real Pomerium when IdP ready");
 console.log("");
 console.log("  Dev token:      Bearer dev-agent-token-PHASE2");
@@ -57,9 +61,15 @@ console.log("");
 
 run("infra-mcp", "npm", ["run", "start", "-w", "infra-mcp"], {
   SECGATE_PORT: MCP_PORT,
-  SECGATE_PHASE: "2",
+  SECGATE_PHASE: BACKEND === "akash" ? "3" : "2",
   SECGATE_BUDGET_USD: process.env.SECGATE_BUDGET_USD || "500",
   SECGATE_GATEWAY_URL: GATEWAY_URL,
+  BACKEND,
+  AKASH_API_KEY: process.env.AKASH_API_KEY || process.env.AKASH_CONSOLE_API_KEY || "",
+  AKASH_DRY_RUN: process.env.AKASH_DRY_RUN || "",
+  AKASH_DEPOSIT_USD: process.env.AKASH_DEPOSIT_USD || "0.5",
+  AKASH_CONSOLE_API_URL:
+    process.env.AKASH_CONSOLE_API_URL || "https://console-api.akash.network",
 });
 
 setTimeout(() => {

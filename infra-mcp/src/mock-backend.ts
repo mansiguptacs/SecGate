@@ -9,6 +9,7 @@ import {
   type Proposal,
 } from "@secgate/shared";
 import { EventStore } from "./events";
+import { MockLeaseProvider, type LeaseProvider } from "./lease-provider";
 
 export interface MockState {
   proposals: Map<string, Proposal>;
@@ -23,7 +24,14 @@ export class MockBackend {
     plans: new Map(),
   };
 
-  constructor(private events: EventStore) {}
+  constructor(
+    private events: EventStore,
+    private leases: LeaseProvider = new MockLeaseProvider()
+  ) {}
+
+  leaseKind(): LeaseProvider["kind"] {
+    return this.leases.kind;
+  }
 
   reset(): void {
     this.state.proposals.clear();
@@ -174,11 +182,11 @@ export class MockBackend {
    * Phase 1 policy (pre-Pomerium): apply only succeeds if guardian approved.
    * Calling apply without approval is denied — simulates identity gate.
    */
-  applyDeployment(
+  async applyDeployment(
     proposalId: string,
     actor = "dev-agent",
-    opts?: { bypassGuardian?: boolean }
-  ): Deployment {
+    _opts?: { bypassGuardian?: boolean }
+  ): Promise<Deployment> {
     const proposal = this.state.proposals.get(proposalId);
     if (!proposal) throw new Error(`Unknown proposal: ${proposalId}`);
 
@@ -224,7 +232,7 @@ export class MockBackend {
       proposal.decisionReason = proposal.decisionReason ?? "Guardian execute";
     }
 
-    const lease = `akash-mock-${uuid().slice(0, 8)}`;
+    const { leaseId, liveUrl } = await this.leases.createLease(proposal.spec);
     const deployment: Deployment = {
       id: `dep-${uuid().slice(0, 8)}`,
       proposalId,
@@ -233,8 +241,8 @@ export class MockBackend {
       gpuCount: proposal.spec.gpuCount,
       usdPerMonth: proposal.estimate.usdPerMonth,
       status: "running",
-      akashLeaseId: lease,
-      liveUrl: `https://${proposal.spec.name.replace(/[^a-z0-9-]/gi, "-").toLowerCase()}.mock.akash.secgate.local`,
+      akashLeaseId: leaseId,
+      liveUrl,
       createdAt: new Date().toISOString(),
       ownerTag: proposal.spec.tags?.owner,
     };
@@ -245,7 +253,7 @@ export class MockBackend {
       "apply",
       actor,
       `Applied ${deployment.name} → ${deployment.liveUrl} ($${deployment.usdPerMonth}/mo)`,
-      { deployment }
+      { deployment, leaseProvider: this.leases.kind }
     );
     this.events.append("allow", actor, `apply_deployment ALLOW`, {
       tool: "apply_deployment",
@@ -255,17 +263,21 @@ export class MockBackend {
     return deployment;
   }
 
-  destroyDeployment(deploymentId: string, actor = "guardian"): Deployment {
+  async destroyDeployment(
+    deploymentId: string,
+    actor = "guardian"
+  ): Promise<Deployment> {
     const dep = this.state.deployments.get(deploymentId);
     if (!dep) throw new Error(`Unknown deployment: ${deploymentId}`);
     if (dep.status === "destroyed") return dep;
+    await this.leases.destroyLease(dep.akashLeaseId);
     dep.status = "destroyed";
     dep.destroyedAt = new Date().toISOString();
     this.events.append(
       "destroy",
       actor,
       `Destroyed ${dep.name} (${dep.akashLeaseId})`,
-      { deploymentId, name: dep.name }
+      { deploymentId, name: dep.name, leaseProvider: this.leases.kind }
     );
     this.events.append("allow", actor, `destroy_deployment ALLOW`, {
       tool: "destroy_deployment",

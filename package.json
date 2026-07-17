@@ -17,9 +17,11 @@
     "start:dashboard": "npm run start -w infra-mcp -- --dashboard-only",
     "start:phase1": "node scripts/start-phase1.js",
     "start:phase2": "node scripts/start-phase2.js",
+    "start:phase3": "BACKEND=akash node scripts/start-phase2.js",
     "test": "npm run test -w infra-mcp && npm run test -w guardian && npm run test -w @secgate/pomerium",
-    "test:phase1": "npm run test -w infra-mcp && npm run test -w guardian",
-    "test:phase2": "npm run test -w @secgate/pomerium"
+    "test:phase1": "npm run test:phase1 -w infra-mcp && npm run test -w guardian",
+    "test:phase2": "npm run test -w @secgate/pomerium",
+    "test:phase3": "npm run test:phase3 -w infra-mcp"
   },
   "engines": {
     "node": ">=18"

@@ -6,6 +6,20 @@ Zero-trust guardrail for infra agents: every infra change is cost-estimated and 
 
 See [PLAN.md](./PLAN.md) for the full architecture and demo story.
 
+## Phase 3 status (Akash backend)
+
+Default remains **`BACKEND=mock`**. Set **`BACKEND=akash`** for the Akash lease path:
+
+- **No credentials** → dry-run leases (`akash-dseq-*` + realistic ingress URL) so the happy-path demo still works
+- **With `AKASH_API_KEY`** → Console Managed Wallet API: SDL (`nginx:alpine`) → bids → lease → live URL
+
+```bash
+npm run test:phase3
+BACKEND=akash npm run start:phase3   # or: npm run start:phase2 with BACKEND=akash
+```
+
+Full env table: [docs/akash-backend.md](./docs/akash-backend.md).
+
 ## Phase 2 status (policy gateway)
 
 **Pomerium policy shim** fronts tool calls on **:3200**. Config is PPL-shaped YAML under `pomerium/policy.yaml`. Labeled for swap: *"Pomerium policy shim — swap for real Pomerium when IdP ready"*.
@@ -45,10 +59,11 @@ Runnable **without** the gateway. Temporary HTTP JSON API mirrors the MCP tools.
 ```bash
 npm install
 npm run build
-npm run test:phase1          # Phase 1 must pass
-npm run test:phase2          # Phase 2 gateway tests
-npm run start:phase2         # API + Pomerium shim + guardian + dashboard
-# or: npm run start:phase1   # without gateway
+npm run test:phase1          # mock backend
+npm run test:phase2          # Pomerium shim
+npm run test:phase3          # Akash dry-run backend
+npm run start:phase2         # API + Pomerium shim + guardian (BACKEND=mock)
+# BACKEND=akash npm run start:phase3   # Akash dry-run or live if AKASH_API_KEY set
 ```
 
 Open **http://localhost:3100/** for the Control Tower.  
@@ -110,24 +125,24 @@ Phase 2 gateway: `Authorization: Bearer dev-agent-token-PHASE2|guardian-agent-to
 ```
 SecGate/
   shared/       # pricing + types
-  infra-mcp/    # HTTP API + mock backend + dashboard static
+  infra-mcp/    # HTTP API + mock/Akash backends + dashboard static
+  infra-mcp/akash/  # staging-api.sdl.yml (nginx:alpine)
   pomerium/     # PPL YAML + policy shim (+ docker stub for real Pomerium)
   guardian/     # budget policy loop + quarantine
   dashboard/    # Control Tower static UI
   data/         # events.json (runtime)
-  docs/         # Dev 2 handoff
+  docs/         # Dev 2 handoff + Akash env
 ```
 
 ## Developer 2
 
 See **[docs/dev2-handoff.md](./docs/dev2-handoff.md)** for tokens, tunnel options (`pom.run` / cloudflared / ngrok), and smoke tests.
 
-## Next (Phase 3)
+## Next (Phase 4)
 
-1. Real Akash backend swap-in  
-2. Zero.xyz live pricing  
-3. Nexla budget tools  
-4. Optional: replace policy shim with real Pomerium MCP + IdP  
+1. Zero.xyz live pricing (`zero search` / `zero fetch`)  
+2. Nexla budget/spend MCP tools  
+3. Optional: replace policy shim with real Pomerium MCP + IdP  
 
 ## License
 

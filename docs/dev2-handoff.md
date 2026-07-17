@@ -114,14 +114,28 @@ curl -s -o /dev/null -w '%{http_code}\n' "$SECGATE/apply_deployment" \
 
 ```bash
 npm install && npm run build
-npm run test:phase1 && npm run test:phase2
+npm run test:phase1 && npm run test:phase2 && npm run test:phase3
 npm run start:phase2
-# Control Tower :3100 · Gateway :3200
+# Control Tower :3100 · Gateway :3200 · BACKEND=mock by default
+
+# Phase 3 Akash path (dry-run without key; live with AKASH_API_KEY):
+# BACKEND=akash npm run start:phase3
 ```
+
+## Akash credentials to hand Dev 1
+
+See **[docs/akash-backend.md](./akash-backend.md)** for the full table. Minimum for a **live** lease URL on camera:
+
+| Var | Where |
+|-----|--------|
+| `AKASH_API_KEY` | console.akash.network → Settings → API Keys |
+| `BACKEND=akash` | set on Laptop B before `start:phase3` |
+
+Without the key, `BACKEND=akash` still demos with dry-run URLs.
 
 ## Sponsor onboarding (unchanged)
 
-1. **Akash** — Console + credits; hand API key/mnemonic to Dev 1 ~2:45  
+1. **Akash** — Console + credits; hand **`AKASH_API_KEY`** (Console API key) to Dev 1  
 2. **Zero.xyz** — auth on **Laptop B** (`zero init`)  
 3. **Nexla** — budget ToolSet MCP URL + key (or keep local JSON)
 
