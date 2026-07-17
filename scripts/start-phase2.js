@@ -93,24 +93,44 @@ if (fs.existsSync(policySeed)) {
   fs.copyFileSync(policySeed, policyPath);
 }
 
+/** When SECGATE_DETACH_KEEP=1, children survive parent exit (demo / durable). */
+const DETACH_KEEP = process.env.SECGATE_DETACH_KEEP === "1";
+
 function run(name, command, args, extraEnv = {}) {
+  const logPath = path.join("/tmp", `secgate-${name}.log`);
+  const out = fs.openSync(logPath, "a");
   const child = spawn(command, args, {
     cwd: root,
     env: { ...process.env, ...extraEnv },
-    stdio: "inherit",
+    stdio: ["ignore", out, out],
+    detached: true,
   });
+  child.unref();
   child.on("exit", (code) => {
-    console.log(`[start-phase2] ${name} exited (${code})`);
+    console.log(`[start-phase2] ${name} exited (${code}) — see ${logPath}`);
   });
   kids.push(child);
+  console.log(`[start-phase2] ${name} pid=${child.pid} log=${logPath}`);
   return child;
 }
 
 function shutdown() {
+  if (DETACH_KEEP) {
+    console.log(
+      "[start-phase2] SECGATE_DETACH_KEEP=1 — leaving children running"
+    );
+    process.exit(0);
+    return;
+  }
+  console.log("[start-phase2] shutting down children…");
   for (const c of kids) {
     try {
-      c.kill("SIGTERM");
-    } catch (_) {}
+      if (c.pid) process.kill(-c.pid, "SIGTERM");
+    } catch (_) {
+      try {
+        c.kill("SIGTERM");
+      } catch (_) {}
+    }
   }
   process.exit(0);
 }
@@ -221,4 +241,13 @@ setTimeout(() => {
     ZERO_BIN: process.env.ZERO_BIN || "",
     ZERO_FORCE_OFF: process.env.ZERO_FORCE_OFF || "",
   });
+  if (DETACH_KEEP) {
+    // Give guardian a moment to spawn, then exit parent — kids stay up.
+    setTimeout(() => {
+      console.log(
+        "[start-phase2] SECGATE_DETACH_KEEP=1 — parent exiting; children stay up"
+      );
+      process.exit(0);
+    }, 500);
+  }
 }, delay + 1600);

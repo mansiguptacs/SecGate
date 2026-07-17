@@ -27,14 +27,39 @@ You do **not** need `.env`, Akash, Nexla, or Zero on this machine.
 
 Settings → MCP → Add server (or merge into your Cursor MCP config).
 
-### Prefer LAN (same Wi‑Fi) — use this
+### Prefer stdio (same Mac as SecGate) — use this
+
+Cursor launches SecGate as a child process — no `127.0.0.1:3200` HTTP needed for MCP.
 
 ```json
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://know-locator-hay-inn.trycloudflare.com",
-      "transport": "streamable-http",
+      "command": "node",
+      "args": [
+        "/Users/uditgupta-om/Hackathon/SecGate/pomerium/dist/mcp-stdio.js"
+      ],
+      "env": {
+        "SECGATE_MCP_TOKEN": "dev-agent-token-PHASE2",
+        "SECGATE_MCP_URL": "http://127.0.0.1:3100",
+        "SECGATE_POLICY_FILE": "/Users/uditgupta-om/Hackathon/SecGate/pomerium/policy.yaml"
+      }
+    }
+  }
+}
+```
+
+Laptop B must keep Control Tower up (`npm run start:durable`) so tool calls can reach `:3100`.
+
+Same file in-repo: [`docs/cursor-mcp.json`](./cursor-mcp.json).
+
+### Prefer LAN (second machine / Laptop A) — HTTP gateway
+
+```json
+{
+  "mcpServers": {
+    "secgate": {
+      "url": "http://172.24.82.134:3200/mcp",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
       }
@@ -44,14 +69,6 @@ Settings → MCP → Add server (or merge into your Cursor MCP config).
 ```
 
 Replace `172.24.82.134` with Laptop B’s current LAN IP if different (`ipconfig getifaddr en0` on their Mac).
-
-Same file in-repo: [`docs/cursor-mcp.json`](./cursor-mcp.json).
-
-### Backup — stable tunnel (only if LAN blocked)
-
-Ask Laptop B to run `npm run start:stable` and paste the **BACKUP** URL from `data/tunnel-url.txt`. Then use that HTTPS URL in the same JSON shape.
-
-Do **not** chase rotating `*.trycloudflare.com` quick-tunnel URLs unless both LAN and stable tunnel fail.
 
 ## 3. Demo tickets
 

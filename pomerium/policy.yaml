@@ -1,4 +1,4 @@
-# AgentFence Pomerium-shaped PPL
+# SecGate Pomerium-shaped PPL
 # ---------------------------------------------------------------------------
 # This file is loaded by the identity-aware policy gateway (pomerium/shim).
 # Label shown in Control Tower: "Identity-aware policy gate (Pomerium)"

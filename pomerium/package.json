@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/shim.js",
+    "start:stdio": "node dist/mcp-stdio.js",
     "dev": "tsx src/shim.ts",
+    "dev:stdio": "tsx src/mcp-stdio.ts",
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {

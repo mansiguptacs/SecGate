@@ -11,6 +11,7 @@
 import express from "express";
 import cors from "cors";
 import { PolicyEngine, policySnippet, normalizeToolName } from "./policy";
+import { mountMcpRoutes } from "./mcp";
 
 const GATEWAY_PORT = Number(process.env.SECGATE_GATEWAY_PORT ?? 3200);
 /** Bind all interfaces so Laptop A can reach the gateway over LAN. */
@@ -145,6 +146,9 @@ export function createShim(opts?: {
     engine.clearQuarantine();
     res.json({ ok: true, snippet: policySnippet(engine.current) });
   });
+
+  // Cursor MCP (streamable HTTP JSON-RPC) — must be before REST tool routes
+  mountMcpRoutes(app, engine, upstream, (event) => emitAudit(upstream, event));
 
   // Tool routes — same paths as Phase 1 HTTP shim, now identity-gated
   app.all(

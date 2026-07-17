@@ -1,8 +1,18 @@
 {
   "mcpServers": {
     "secgate": {
-      "url": "https://know-locator-hay-inn.trycloudflare.com",
-      "transport": "streamable-http",
+      "command": "node",
+      "args": [
+        "/Users/uditgupta-om/Hackathon/SecGate/pomerium/dist/mcp-stdio.js"
+      ],
+      "env": {
+        "SECGATE_MCP_TOKEN": "dev-agent-token-PHASE2",
+        "SECGATE_MCP_URL": "http://127.0.0.1:3100",
+        "SECGATE_POLICY_FILE": "/Users/uditgupta-om/Hackathon/SecGate/pomerium/policy.yaml"
+      }
+    },
+    "secgate-http": {
+      "url": "http://127.0.0.1:3200/mcp",
       "headers": {
         "Authorization": "Bearer dev-agent-token-PHASE2"
       }
