@@ -22,5 +22,14 @@ guardian_only_tools:
 abuse:
   blocked_mutate_threshold: 3
 quarantine:
-  identities: []
-deny_rules: []
+  identities:
+    - id: dev-agent
+      email: dev@secgate.local
+      reason: Repeated blocked mutate attempts (3×) — identity quarantined by guardian
+      since: "2026-07-17T23:59:54.561Z"
+deny_rules:
+  - deny:
+      and:
+        - email:
+            is: dev@secgate.local
+    reason: Repeated blocked mutate attempts (3×) — identity quarantined by guardian

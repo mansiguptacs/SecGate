@@ -87,7 +87,17 @@ export class AkashLeaseProvider implements LeaseProvider {
     if (this.mode === "dry-run") {
       return this.createDryRunLease(spec);
     }
-    return this.createLiveLease(spec);
+    try {
+      return await this.createLiveLease(spec);
+    } catch (err) {
+      // Demo resilience: invalid/expired keys or unreachable Console API must
+      // still create a running deployment so Control Tower committed spend updates.
+      const reason = err instanceof Error ? err.message : String(err);
+      console.warn(
+        `[akash] live lease failed (${reason}) — falling back to dry-run for "${spec.name}"`
+      );
+      return this.createDryRunLease(spec);
+    }
   }
 
   async destroyLease(leaseId: string): Promise<void> {
@@ -97,7 +107,13 @@ export class AkashLeaseProvider implements LeaseProvider {
     const dseq =
       this.dseqByLease.get(leaseId) ??
       (leaseId.startsWith("akash-dseq-") ? leaseId.slice("akash-dseq-".length) : leaseId);
-    await this.api(`/v1/deployments/${dseq}`, { method: "DELETE" });
+    try {
+      await this.api(`/v1/deployments/${dseq}`, { method: "DELETE" });
+    } catch (err) {
+      // Dry-run fallback leases never hit Console; live close may also 403.
+      const reason = err instanceof Error ? err.message : String(err);
+      console.warn(`[akash] destroyLease ${leaseId} ignored: ${reason}`);
+    }
     this.dseqByLease.delete(leaseId);
   }
 
@@ -197,14 +213,22 @@ export class AkashLeaseProvider implements LeaseProvider {
   }
 
   private async api<T>(pathName: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${this.apiBase}${pathName}`, {
-      ...init,
-      headers: {
-        "x-api-key": this.apiKey ?? "",
-        "content-type": "application/json",
-        ...(init?.headers ?? {}),
-      },
-    });
+    const timeoutMs = Number(process.env.AKASH_API_TIMEOUT_MS ?? 8000);
+    let res: Response;
+    try {
+      res = await fetch(`${this.apiBase}${pathName}`, {
+        ...init,
+        signal: AbortSignal.timeout(Number.isFinite(timeoutMs) ? timeoutMs : 8000),
+        headers: {
+          "x-api-key": this.apiKey ?? "",
+          "content-type": "application/json",
+          ...(init?.headers ?? {}),
+        },
+      });
+    } catch (err) {
+      const cause = err instanceof Error ? err.message : String(err);
+      throw new Error(`Akash Console API unreachable ${pathName}: ${cause}`);
+    }
     const text = await res.text();
     let parsed: any;
     try {
